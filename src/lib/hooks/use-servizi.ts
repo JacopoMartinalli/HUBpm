@@ -6,8 +6,142 @@ import type {
   CatalogoServizioUpdate,
   ServizioVenduto,
   ServizioVendutoInsert,
-  ServizioVendutoUpdate
+  ServizioVendutoUpdate,
+  CategoriaServizio,
+  CategoriaServizioInsert,
+  CategoriaServizioUpdate,
+  PacchettoServizio,
+  PacchettoServizioInsert,
+  PacchettoServizioUpdate,
+  PacchettoServizioItemInsert
 } from '@/types/database'
+
+// ============================================
+// CATEGORIE SERVIZI
+// ============================================
+
+export const categorieServiziKeys = {
+  all: ['categorie_servizi'] as const,
+  lists: () => [...categorieServiziKeys.all, 'list'] as const,
+  details: () => [...categorieServiziKeys.all, 'detail'] as const,
+  detail: (id: string) => [...categorieServiziKeys.details(), id] as const,
+}
+
+// Lista categorie servizi
+export function useCategorieServizi() {
+  return useQuery({
+    queryKey: categorieServiziKeys.lists(),
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('categorie_servizi')
+        .select('*')
+        .eq('tenant_id', DEFAULT_TENANT_ID)
+        .eq('attiva', true)
+        .order('ordine', { ascending: true })
+
+      if (error) throw error
+      return data as CategoriaServizio[]
+    },
+  })
+}
+
+// Tutte le categorie (anche inattive)
+export function useAllCategorieServizi() {
+  return useQuery({
+    queryKey: [...categorieServiziKeys.lists(), 'all'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('categorie_servizi')
+        .select('*')
+        .eq('tenant_id', DEFAULT_TENANT_ID)
+        .order('ordine', { ascending: true })
+
+      if (error) throw error
+      return data as CategoriaServizio[]
+    },
+  })
+}
+
+// Singola categoria
+export function useCategoriaServizio(id: string | undefined) {
+  return useQuery({
+    queryKey: categorieServiziKeys.detail(id!),
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('categorie_servizi')
+        .select('*')
+        .eq('id', id)
+        .single()
+
+      if (error) throw error
+      return data as CategoriaServizio
+    },
+    enabled: !!id,
+  })
+}
+
+// Crea categoria
+export function useCreateCategoriaServizio() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (categoria: Omit<CategoriaServizioInsert, 'tenant_id'>) => {
+      const { data, error } = await supabase
+        .from('categorie_servizi')
+        .insert({ ...categoria, tenant_id: DEFAULT_TENANT_ID })
+        .select()
+        .single()
+
+      if (error) throw error
+      return data as CategoriaServizio
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: categorieServiziKeys.all })
+    },
+  })
+}
+
+// Aggiorna categoria
+export function useUpdateCategoriaServizio() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: CategoriaServizioUpdate }) => {
+      const { data: updated, error } = await supabase
+        .from('categorie_servizi')
+        .update(data)
+        .eq('id', id)
+        .select()
+        .single()
+
+      if (error) throw error
+      return updated as CategoriaServizio
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: categorieServiziKeys.detail(data.id) })
+      queryClient.invalidateQueries({ queryKey: categorieServiziKeys.lists() })
+    },
+  })
+}
+
+// Elimina categoria
+export function useDeleteCategoriaServizio() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('categorie_servizi')
+        .delete()
+        .eq('id', id)
+
+      if (error) throw error
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: categorieServiziKeys.all })
+    },
+  })
+}
 
 // ============================================
 // CATALOGO SERVIZI
@@ -27,8 +161,55 @@ export function useCatalogoServizi() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('catalogo_servizi')
-        .select('*')
+        .select(`
+          *,
+          categoria:categoria_id(id, nome, colore, icona)
+        `)
         .eq('tenant_id', DEFAULT_TENANT_ID)
+        .order('ordine', { ascending: true })
+
+      if (error) throw error
+      return data as CatalogoServizio[]
+    },
+  })
+}
+
+// Lista catalogo servizi per categoria
+export function useCatalogoServiziByCategoria(categoriaId: string | undefined) {
+  return useQuery({
+    queryKey: [...catalogoServiziKeys.lists(), 'categoria', categoriaId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('catalogo_servizi')
+        .select(`
+          *,
+          categoria:categoria_id(id, nome, colore, icona)
+        `)
+        .eq('tenant_id', DEFAULT_TENANT_ID)
+        .eq('categoria_id', categoriaId)
+        .eq('attivo', true)
+        .order('ordine', { ascending: true })
+
+      if (error) throw error
+      return data as CatalogoServizio[]
+    },
+    enabled: !!categoriaId,
+  })
+}
+
+// Lista servizi attivi
+export function useCatalogoServiziAttivi() {
+  return useQuery({
+    queryKey: [...catalogoServiziKeys.lists(), 'attivi'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('catalogo_servizi')
+        .select(`
+          *,
+          categoria:categoria_id(id, nome, colore, icona)
+        `)
+        .eq('tenant_id', DEFAULT_TENANT_ID)
+        .eq('attivo', true)
         .order('ordine', { ascending: true })
 
       if (error) throw error
@@ -278,6 +459,207 @@ export function useDeleteServizioVenduto() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: serviziVendutiKeys.all })
+    },
+  })
+}
+
+// ============================================
+// PACCHETTI SERVIZI
+// ============================================
+
+export const pacchettiServiziKeys = {
+  all: ['pacchetti_servizi'] as const,
+  lists: () => [...pacchettiServiziKeys.all, 'list'] as const,
+  details: () => [...pacchettiServiziKeys.all, 'detail'] as const,
+  detail: (id: string) => [...pacchettiServiziKeys.details(), id] as const,
+}
+
+// Lista pacchetti servizi
+export function usePacchettiServizi() {
+  return useQuery({
+    queryKey: pacchettiServiziKeys.lists(),
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('pacchetti_servizi')
+        .select(`
+          *,
+          categoria:categoria_id(id, nome, colore, icona),
+          servizi:pacchetti_servizi_items(
+            id,
+            ordine,
+            note,
+            servizio:servizio_id(id, nome, descrizione, tipo, prezzo_base, prezzo_tipo)
+          )
+        `)
+        .eq('tenant_id', DEFAULT_TENANT_ID)
+        .order('ordine', { ascending: true })
+
+      if (error) throw error
+      return data as PacchettoServizio[]
+    },
+  })
+}
+
+// Lista pacchetti attivi
+export function usePacchettiServiziAttivi() {
+  return useQuery({
+    queryKey: [...pacchettiServiziKeys.lists(), 'attivi'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('pacchetti_servizi')
+        .select(`
+          *,
+          categoria:categoria_id(id, nome, colore, icona),
+          servizi:pacchetti_servizi_items(
+            id,
+            ordine,
+            note,
+            servizio:servizio_id(id, nome, descrizione, tipo, prezzo_base, prezzo_tipo)
+          )
+        `)
+        .eq('tenant_id', DEFAULT_TENANT_ID)
+        .eq('attivo', true)
+        .order('ordine', { ascending: true })
+
+      if (error) throw error
+      return data as PacchettoServizio[]
+    },
+  })
+}
+
+// Singolo pacchetto
+export function usePacchettoServizio(id: string | undefined) {
+  return useQuery({
+    queryKey: pacchettiServiziKeys.detail(id!),
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('pacchetti_servizi')
+        .select(`
+          *,
+          categoria:categoria_id(id, nome, colore, icona),
+          servizi:pacchetti_servizi_items(
+            id,
+            ordine,
+            note,
+            servizio:servizio_id(*)
+          )
+        `)
+        .eq('id', id)
+        .single()
+
+      if (error) throw error
+      return data as PacchettoServizio
+    },
+    enabled: !!id,
+  })
+}
+
+// Crea pacchetto
+export function useCreatePacchettoServizio() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (pacchetto: Omit<PacchettoServizioInsert, 'tenant_id'> & { servizi_ids?: string[] }) => {
+      const { servizi_ids, ...pacchettoData } = pacchetto
+
+      // Crea il pacchetto
+      const { data, error } = await supabase
+        .from('pacchetti_servizi')
+        .insert({ ...pacchettoData, tenant_id: DEFAULT_TENANT_ID })
+        .select()
+        .single()
+
+      if (error) throw error
+
+      // Se ci sono servizi, li associamo
+      if (servizi_ids && servizi_ids.length > 0) {
+        const items = servizi_ids.map((servizio_id, index) => ({
+          tenant_id: DEFAULT_TENANT_ID,
+          pacchetto_id: data.id,
+          servizio_id,
+          ordine: index
+        }))
+
+        const { error: itemsError } = await supabase
+          .from('pacchetti_servizi_items')
+          .insert(items)
+
+        if (itemsError) throw itemsError
+      }
+
+      return data as PacchettoServizio
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: pacchettiServiziKeys.all })
+    },
+  })
+}
+
+// Aggiorna pacchetto
+export function useUpdatePacchettoServizio() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({ id, data, servizi_ids }: { id: string; data: PacchettoServizioUpdate; servizi_ids?: string[] }) => {
+      // Aggiorna il pacchetto
+      const { data: updated, error } = await supabase
+        .from('pacchetti_servizi')
+        .update(data)
+        .eq('id', id)
+        .select()
+        .single()
+
+      if (error) throw error
+
+      // Se servizi_ids è definito, aggiorniamo le associazioni
+      if (servizi_ids !== undefined) {
+        // Rimuovi vecchie associazioni
+        await supabase
+          .from('pacchetti_servizi_items')
+          .delete()
+          .eq('pacchetto_id', id)
+
+        // Aggiungi nuove associazioni
+        if (servizi_ids.length > 0) {
+          const items = servizi_ids.map((servizio_id, index) => ({
+            tenant_id: DEFAULT_TENANT_ID,
+            pacchetto_id: id,
+            servizio_id,
+            ordine: index
+          }))
+
+          const { error: itemsError } = await supabase
+            .from('pacchetti_servizi_items')
+            .insert(items)
+
+          if (itemsError) throw itemsError
+        }
+      }
+
+      return updated as PacchettoServizio
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: pacchettiServiziKeys.detail(data.id) })
+      queryClient.invalidateQueries({ queryKey: pacchettiServiziKeys.lists() })
+    },
+  })
+}
+
+// Elimina pacchetto
+export function useDeletePacchettoServizio() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('pacchetti_servizi')
+        .delete()
+        .eq('id', id)
+
+      if (error) throw error
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: pacchettiServiziKeys.all })
     },
   })
 }

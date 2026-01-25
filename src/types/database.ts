@@ -60,6 +60,13 @@ export type TipoServizio = 'one_shot' | 'ricorrente'
 export type TipoPrezzo = 'fisso' | 'percentuale' | 'da_quotare'
 export type StatoServizioVenduto = 'da_iniziare' | 'in_corso' | 'completato' | 'annullato'
 
+// Erogazione
+export type StatoErogazionePacchetto = 'bloccato' | 'da_iniziare' | 'in_corso' | 'completato' | 'annullato'
+export type StatoErogazioneServizio = 'da_iniziare' | 'in_corso' | 'completato' | 'bloccato' | 'annullato'
+export type StatoErogazioneTask = 'da_fare' | 'in_corso' | 'completata' | 'bloccata' | 'annullata'
+export type TipoTask = 'manuale' | 'automatica'
+export type TipoEsitoPacchetto = 'one_shot' | 'gestione'
+
 // Prenotazioni
 export type StatoPrenotazione = 'richiesta' | 'confermata' | 'checkin' | 'checkout' | 'cancellata' | 'no_show'
 export type CanalePrenota = 'airbnb' | 'booking' | 'vrbo' | 'direct' | 'altro'
@@ -288,6 +295,40 @@ export interface Documento {
   updated_at: string
 }
 
+// ============================================
+// CATEGORIE SERVIZI
+// ============================================
+
+export interface CategoriaServizio {
+  id: string
+  tenant_id: string
+  nome: string
+  descrizione: string | null
+  colore: string
+  icona: string | null
+  ordine: number
+  predefinita: boolean
+  attiva: boolean
+  created_at: string
+  updated_at: string
+}
+
+export interface CategoriaServizioInsert {
+  tenant_id: string
+  nome: string
+  descrizione?: string | null
+  colore?: string
+  icona?: string | null
+  ordine?: number
+  predefinita?: boolean
+  attiva?: boolean
+}
+export type CategoriaServizioUpdate = Partial<CategoriaServizioInsert>
+
+// ============================================
+// CATALOGO SERVIZI (aggiornato)
+// ============================================
+
 export interface CatalogoServizio {
   id: string
   tenant_id: string
@@ -299,7 +340,273 @@ export interface CatalogoServizio {
   fase_applicabile: string | null
   attivo: boolean
   ordine: number
+  // Nuovi campi v2
+  categoria_id: string | null
+  durata_stimata_ore: number | null
+  durata_stimata_giorni: number | null
+  note_interne: string | null
+  documenti_richiesti: string[] | null
+  // Vendibilità
+  vendibile_singolarmente: boolean
   created_at: string
+  updated_at: string
+  // Relazioni
+  categoria?: CategoriaServizio
+}
+
+// ============================================
+// PACCHETTI SERVIZI
+// ============================================
+
+export interface PacchettoServizio {
+  id: string
+  tenant_id: string
+  nome: string
+  descrizione: string | null
+  categoria_id: string | null
+  attivo: boolean
+  ordine: number
+  note_interne: string | null
+  prezzo_base: number | null
+  tipo_esito: TipoEsitoPacchetto | null
+  created_at: string
+  updated_at: string
+  // Relazioni
+  categoria?: CategoriaServizio
+  servizi?: PacchettoServizioItem[]
+  dipendenze?: PacchettoDipendenza[]
+}
+
+export interface PacchettoServizioInsert {
+  tenant_id: string
+  nome: string
+  descrizione?: string | null
+  categoria_id?: string | null
+  attivo?: boolean
+  ordine?: number
+  note_interne?: string | null
+  prezzo_base?: number | null
+  tipo_esito?: TipoEsitoPacchetto | null
+}
+export type PacchettoServizioUpdate = Partial<PacchettoServizioInsert>
+
+export interface PacchettoServizioItem {
+  id: string
+  tenant_id: string
+  pacchetto_id: string
+  servizio_id: string
+  ordine: number
+  note: string | null
+  created_at: string
+  // Relazioni
+  servizio?: CatalogoServizio
+}
+
+export type PacchettoServizioItemInsert = Omit<PacchettoServizioItem, 'id' | 'created_at' | 'servizio'>
+export type PacchettoServizioItemUpdate = Partial<PacchettoServizioItemInsert>
+
+// ============================================
+// DIPENDENZE PACCHETTI
+// ============================================
+
+export interface PacchettoDipendenza {
+  id: string
+  tenant_id: string
+  pacchetto_id: string
+  dipende_da_id: string
+  created_at: string
+  // Relazioni
+  pacchetto?: PacchettoServizio
+  dipende_da?: PacchettoServizio
+}
+
+export type PacchettoDipendenzaInsert = Omit<PacchettoDipendenza, 'id' | 'created_at' | 'pacchetto' | 'dipende_da'>
+
+// ============================================
+// TEMPLATE TASK PER SERVIZIO
+// ============================================
+
+export interface TemplateTaskServizio {
+  id: string
+  tenant_id: string
+  servizio_id: string
+  titolo: string
+  descrizione: string | null
+  tipo: TipoTask
+  trigger_automatico: string | null
+  ordine: number
+  giorni_deadline: number | null
+  obbligatoria: boolean
+  attiva: boolean
+  created_at: string
+  updated_at: string
+  // Relazioni
+  servizio?: CatalogoServizio
+}
+
+export type TemplateTaskServizioInsert = Omit<TemplateTaskServizio, 'id' | 'created_at' | 'updated_at' | 'servizio'>
+export type TemplateTaskServizioUpdate = Partial<TemplateTaskServizioInsert>
+
+// ============================================
+// EROGAZIONE PACCHETTI (per proprietà)
+// ============================================
+
+export interface ErogazionePacchetto {
+  id: string
+  tenant_id: string
+  proprieta_id: string
+  pacchetto_id: string
+  stato: StatoErogazionePacchetto
+  prezzo_totale: number | null
+  sconto_percentuale: number | null
+  note: string | null
+  data_inizio: string | null
+  data_completamento: string | null
+  data_scadenza_prevista: string | null
+  created_at: string
+  updated_at: string
+  // Relazioni
+  proprieta?: Proprieta
+  pacchetto?: PacchettoServizio
+  servizi?: ErogazioneServizio[]
+}
+
+export interface ErogazionePacchettoInsert {
+  tenant_id: string
+  proprieta_id: string
+  pacchetto_id: string
+  stato?: StatoErogazionePacchetto
+  prezzo_totale?: number | null
+  sconto_percentuale?: number | null
+  note?: string | null
+  data_inizio?: string | null
+  data_completamento?: string | null
+  data_scadenza_prevista?: string | null
+}
+export type ErogazionePacchettoUpdate = Partial<Omit<ErogazionePacchettoInsert, 'tenant_id' | 'proprieta_id' | 'pacchetto_id'>>
+
+// ============================================
+// EROGAZIONE SERVIZI
+// ============================================
+
+export interface ErogazioneServizio {
+  id: string
+  tenant_id: string
+  erogazione_pacchetto_id: string
+  servizio_id: string
+  stato: StatoErogazioneServizio
+  prezzo: number | null
+  assegnato_a: string | null
+  data_inizio: string | null
+  data_completamento: string | null
+  data_scadenza: string | null
+  note: string | null
+  created_at: string
+  updated_at: string
+  // Relazioni
+  erogazione_pacchetto?: ErogazionePacchetto
+  servizio?: CatalogoServizio
+  task?: ErogazioneTask[]
+}
+
+export type ErogazioneServizioInsert = Omit<ErogazioneServizio, 'id' | 'created_at' | 'updated_at' | 'erogazione_pacchetto' | 'servizio' | 'task'>
+export type ErogazioneServizioUpdate = Partial<Omit<ErogazioneServizioInsert, 'tenant_id' | 'erogazione_pacchetto_id' | 'servizio_id'>>
+
+// ============================================
+// EROGAZIONE TASK
+// ============================================
+
+export interface ErogazioneTask {
+  id: string
+  tenant_id: string
+  erogazione_servizio_id: string
+  template_id: string | null
+  titolo: string
+  descrizione: string | null
+  tipo: TipoTask
+  stato: StatoErogazioneTask
+  obbligatoria: boolean
+  ordine: number
+  assegnato_a: string | null
+  data_scadenza: string | null
+  data_inizio: string | null
+  data_completamento: string | null
+  completato_da: string | null
+  trigger_automatico: string | null
+  trigger_eseguito: boolean
+  trigger_data: string | null
+  note: string | null
+  created_at: string
+  updated_at: string
+  // Relazioni
+  erogazione_servizio?: ErogazioneServizio
+  assegnato?: Contatto
+}
+
+export type ErogazioneTaskInsert = Omit<ErogazioneTask, 'id' | 'created_at' | 'updated_at' | 'erogazione_servizio' | 'assegnato'>
+export type ErogazioneTaskUpdate = Partial<Omit<ErogazioneTaskInsert, 'tenant_id' | 'erogazione_servizio_id'>>
+
+// ============================================
+// VIEW: Stato Erogazione Pacchetto (calcolato)
+// ============================================
+
+export interface ErogazionePacchettoStato {
+  id: string
+  proprieta_id: string
+  pacchetto_id: string
+  tenant_id: string
+  pacchetto_nome: string
+  tipo_esito: TipoEsitoPacchetto | null
+  prezzo_totale: number | null
+  data_inizio: string | null
+  data_completamento: string | null
+  totale_servizi: number
+  servizi_completati: number
+  servizi_in_corso: number
+  servizi_bloccati: number
+  stato_calcolato: StatoErogazionePacchetto
+  percentuale_completamento: number
+}
+
+// ============================================
+// VIEW: Stato Erogazione Servizio (calcolato)
+// ============================================
+
+export interface ErogazioneServizioStato {
+  id: string
+  erogazione_pacchetto_id: string
+  servizio_id: string
+  tenant_id: string
+  servizio_nome: string
+  servizio_tipo: TipoServizio
+  prezzo: number | null
+  data_inizio: string | null
+  data_completamento: string | null
+  totale_task: number
+  task_completate: number
+  task_in_corso: number
+  task_bloccate: number
+  task_obbligatorie: number
+  task_obb_completate: number
+  stato_calcolato: StatoErogazioneServizio
+  percentuale_completamento: number
+}
+
+// ============================================
+// VIEW: Riepilogo Erogazione Proprietà
+// ============================================
+
+export interface ProprietaErogazione {
+  proprieta_id: string
+  proprieta_nome: string
+  fase: FaseProprieta
+  tenant_id: string
+  totale_pacchetti: number
+  pacchetti_completati: number
+  pacchetti_in_corso: number
+  pacchetti_bloccati: number
+  valore_totale: number | null
+  pronto_per_live: boolean
 }
 
 export interface ServizioVenduto {
@@ -441,8 +748,24 @@ export type PrenotazioneUpdate = Partial<PrenotazioneInsert>
 export type ServizioVendutoInsert = Omit<ServizioVenduto, 'id' | 'created_at' | 'updated_at' | 'servizio' | 'contatto' | 'proprieta'>
 export type ServizioVendutoUpdate = Partial<ServizioVendutoInsert>
 
-export type CatalogoServizioInsert = Omit<CatalogoServizio, 'id' | 'created_at'>
-export type CatalogoServizioUpdate = Partial<CatalogoServizioInsert>
+export interface CatalogoServizioInsert {
+  tenant_id: string
+  nome: string
+  tipo: TipoServizio
+  descrizione?: string | null
+  prezzo_base?: number | null
+  prezzo_tipo?: TipoPrezzo | null
+  fase_applicabile?: string | null
+  attivo?: boolean
+  ordine?: number
+  categoria_id?: string | null
+  durata_stimata_ore?: number | null
+  durata_stimata_giorni?: number | null
+  note_interne?: string | null
+  documenti_richiesti?: string[] | null
+  vendibile_singolarmente?: boolean
+}
+export type CatalogoServizioUpdate = Partial<Omit<CatalogoServizioInsert, 'tenant_id'>>
 
 // ============================================
 // PROPERTY MANAGER (Dati Aziendali PM)
