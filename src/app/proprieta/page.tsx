@@ -10,6 +10,7 @@ import { formatPercent } from '@/lib/utils'
 import { cn } from '@/lib/utils'
 import type { Proprieta } from '@/types/database'
 import { TIPOLOGIE_PROPRIETA } from '@/constants'
+import { ProprietaDialog } from './components/proprieta-dialog'
 
 // Definizione delle viste/tab per le proprietà
 const VISTE_PROPRIETA = [
@@ -17,7 +18,7 @@ const VISTE_PROPRIETA = [
     id: 'lead',
     label: 'Lead',
     icon: Home,
-    fasi: ['P0'], // Fase iniziale
+    fasi: ['P0'] as string[], // Fase iniziale
     color: 'text-gray-600',
     bgColor: 'bg-gray-100',
     borderColor: 'border-gray-300',
@@ -27,7 +28,7 @@ const VISTE_PROPRIETA = [
     id: 'onboarding',
     label: 'Onboarding',
     icon: FileText,
-    fasi: ['P1'], // Setup legale
+    fasi: ['P1'] as string[], // Setup legale
     color: 'text-blue-600',
     bgColor: 'bg-blue-100',
     borderColor: 'border-blue-300',
@@ -37,7 +38,7 @@ const VISTE_PROPRIETA = [
     id: 'avvio',
     label: 'Avvio',
     icon: Rocket,
-    fasi: ['P2', 'P3'], // Setup operativo + Go-live
+    fasi: ['P2', 'P3'] as string[], // Setup operativo + Go-live
     color: 'text-purple-600',
     bgColor: 'bg-purple-100',
     borderColor: 'border-purple-300',
@@ -47,7 +48,7 @@ const VISTE_PROPRIETA = [
     id: 'live',
     label: 'Live',
     icon: Radio,
-    fasi: ['P4'], // Operativa
+    fasi: ['P4'] as string[], // Operativa
     color: 'text-green-600',
     bgColor: 'bg-green-100',
     borderColor: 'border-green-300',
@@ -61,22 +62,23 @@ export default function ProprietaPage() {
   const router = useRouter()
   const { data: proprieta, isLoading } = useProprietaList()
   const [vistaAttiva, setVistaAttiva] = useState<VistaId>('live')
+  const [dialogOpen, setDialogOpen] = useState(false)
 
   // Filtra proprietà per vista attiva
   const proprietaFiltrate = useMemo(() => {
     if (!proprieta) return []
     const vista = VISTE_PROPRIETA.find(v => v.id === vistaAttiva)
     if (!vista) return proprieta
-    return proprieta.filter(p => vista.fasi.includes(p.fase as any))
+    return proprieta.filter(p => vista.fasi.includes(p.fase))
   }, [proprieta, vistaAttiva])
 
   // Conta proprietà per ogni vista
-  const conteggiPerVista = useMemo(() => {
-    if (!proprieta) return {}
+  const conteggiPerVista = useMemo((): Record<VistaId, number> => {
+    if (!proprieta) return { lead: 0, onboarding: 0, avvio: 0, live: 0 }
     return VISTE_PROPRIETA.reduce((acc, vista) => {
-      acc[vista.id] = proprieta.filter(p => vista.fasi.includes(p.fase as any)).length
+      acc[vista.id] = proprieta.filter(p => vista.fasi.includes(p.fase)).length
       return acc
-    }, {} as Record<VistaId, number>)
+    }, { lead: 0, onboarding: 0, avvio: 0, live: 0 } as Record<VistaId, number>)
   }, [proprieta])
 
   const handleClick = (id: string) => {
@@ -130,7 +132,7 @@ export default function ProprietaPage() {
         title="Proprietà"
         description="Gestisci le proprietà sotto gestione"
         actions={
-          <Button>
+          <Button onClick={() => setDialogOpen(true)}>
             <Plus className="h-4 w-4 mr-2" />
             Nuova Proprietà
           </Button>
@@ -189,6 +191,8 @@ export default function ProprietaPage() {
             : `Non ci sono proprietà nella fase "${vistaCorrente?.label}".`,
         }}
       />
+
+      <ProprietaDialog open={dialogOpen} onOpenChange={setDialogOpen} />
     </div>
   )
 }

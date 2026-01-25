@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase, DEFAULT_TENANT_ID } from '@/lib/supabase'
 import { generaTaskPerFase } from '@/lib/services/fase-service'
-import type { Contatto, ContattoInsert, ContattoUpdate, TipoContatto, FaseLead, FaseCliente } from '@/types/database'
+import type { Contatto, ContattoInsert, ContattoUpdate, TipoContatto, FaseLead, FaseCliente, MotivoLeadPerso } from '@/types/database'
 import { taskKeys } from './use-task'
 
 export const contattiKeys = {
@@ -219,12 +219,13 @@ export function useMarkLeadAsLost() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async ({ id, motivo }: { id: string; motivo: string }) => {
+    mutationFn: async ({ id, motivoCodice, note }: { id: string; motivoCodice: MotivoLeadPerso; note?: string }) => {
       const { data, error } = await supabase
         .from('contatti')
         .update({
           esito_lead: 'perso',
-          motivo_perso: motivo,
+          motivo_perso_codice: motivoCodice,
+          motivo_perso: note || null,
         })
         .eq('id', id)
         .select()

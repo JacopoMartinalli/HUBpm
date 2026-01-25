@@ -3,18 +3,17 @@
 // ============================================
 
 export const FASI_LEAD = [
-  { id: 'L0', label: 'Primo Contatto', description: 'Registrazione dati e primo contatto', color: 'bg-gray-100', textColor: 'text-gray-700' },
-  { id: 'L1', label: 'Qualifica in Corso', description: 'Incontro e valutazione interesse', color: 'bg-blue-100', textColor: 'text-blue-700' },
-  { id: 'L2', label: 'Lead Qualificato', description: 'In attesa qualifica proprieta', color: 'bg-indigo-100', textColor: 'text-indigo-700' },
-  { id: 'L3', label: 'Pronto Conversione', description: 'Almeno 1 proprieta qualificata', color: 'bg-green-100', textColor: 'text-green-700' },
+  { id: 'L0', label: 'Nuovo Lead', description: 'Lead appena entrato nel sistema', color: 'bg-gray-100', textColor: 'text-gray-700' },
+  { id: 'L1', label: 'Contattato', description: 'Prima chiamata effettuata, interesse verificato', color: 'bg-blue-100', textColor: 'text-blue-700' },
+  { id: 'L2', label: 'In Valutazione', description: 'Raccolta info, sopralluogo in corso', color: 'bg-indigo-100', textColor: 'text-indigo-700' },
+  { id: 'L3', label: 'Qualificato', description: 'Pronto per conversione a cliente', color: 'bg-green-100', textColor: 'text-green-700' },
 ] as const
 
 export const FASI_PROPRIETA_LEAD = [
-  { id: 'PL0', label: 'Registrata', description: 'Dati base inseriti', color: 'bg-gray-100', textColor: 'text-gray-700' },
-  { id: 'PL1', label: 'Raccolta Info', description: 'Foto e info struttura', color: 'bg-blue-100', textColor: 'text-blue-700' },
-  { id: 'PL2', label: 'Valutazione', description: 'Analisi potenziale e sopralluogo', color: 'bg-indigo-100', textColor: 'text-indigo-700' },
-  { id: 'PL3', label: 'Proposta', description: 'Preparazione e presentazione proposta', color: 'bg-purple-100', textColor: 'text-purple-700' },
-  { id: 'PL4', label: 'Qualificata', description: 'Proposta accettata', color: 'bg-green-100', textColor: 'text-green-700' },
+  { id: 'PL0', label: 'Registrata', description: 'Dati base proprietà inseriti', color: 'bg-gray-100', textColor: 'text-gray-700' },
+  { id: 'PL1', label: 'Info Raccolte', description: 'Foto, planimetrie, caratteristiche complete', color: 'bg-blue-100', textColor: 'text-blue-700' },
+  { id: 'PL2', label: 'Sopralluogo', description: 'Visita effettuata, valutazione tecnica', color: 'bg-indigo-100', textColor: 'text-indigo-700' },
+  { id: 'PL3', label: 'Valutata', description: 'Analisi completata, pronta per proposta', color: 'bg-green-100', textColor: 'text-green-700' },
 ] as const
 
 export const FASI_CLIENTE = [
@@ -41,6 +40,20 @@ export const ESITI_LEAD = [
   { id: 'in_corso', label: 'In Corso', color: 'bg-yellow-100 text-yellow-800' },
   { id: 'vinto', label: 'Vinto', color: 'bg-green-100 text-green-800' },
   { id: 'perso', label: 'Perso', color: 'bg-red-100 text-red-800' },
+] as const
+
+// ============================================
+// MOTIVI LEAD PERSO
+// ============================================
+
+export const MOTIVI_LEAD_PERSO = [
+  { id: 'prezzo', label: 'Prezzo troppo alto', description: 'Non rientra nel budget del cliente' },
+  { id: 'competitor', label: 'Scelto competitor', description: 'Ha preferito altra agenzia/servizio' },
+  { id: 'non_risponde', label: 'Non risponde', description: 'Contatto perso, non raggiungibile' },
+  { id: 'tempistiche', label: 'Tempistiche', description: 'Non pronto ora, rimandato a data da destinarsi' },
+  { id: 'proprieta_non_idonea', label: 'Proprietà non idonea', description: 'Non gestiamo questo tipo di proprietà' },
+  { id: 'cambio_idea', label: 'Cambio idea', description: 'Non vuole più affittare/vendere' },
+  { id: 'altro', label: 'Altro', description: 'Motivo specificato nelle note' },
 ] as const
 
 export const ESITI_PROPRIETA_LEAD = [

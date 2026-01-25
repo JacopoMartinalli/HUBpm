@@ -39,3 +39,6 @@ export * from './use-property-manager'
 
 // Erogazione Servizi (pacchetti, servizi, task per proprietà)
 export * from './use-erogazione'
+
+// Proposte Commerciali
+export * from './use-proposte'

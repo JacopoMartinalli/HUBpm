@@ -97,7 +97,7 @@ export default function ProprietaLeadDetailPage() {
     router.push('/proprieta-lead')
   }
 
-  const canConferma = proprietaLead.fase === 'PL4' && proprietaLead.esito === 'in_corso'
+  const canConferma = proprietaLead.fase === 'PL3' && proprietaLead.esito === 'in_corso'
   const isClosed = proprietaLead.esito !== 'in_corso'
   const tipologiaLabel = TIPOLOGIE_PROPRIETA.find(t => t.id === proprietaLead.tipologia)?.label
 

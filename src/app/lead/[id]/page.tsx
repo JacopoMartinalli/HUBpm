@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, Trash2, UserCheck, UserX, Building2, AlertTriangle, ChevronRight, ChevronLeft, Plus } from 'lucide-react'
+import { ArrowLeft, Trash2, UserCheck, UserX, Building2, AlertTriangle, ChevronRight, ChevronLeft, Plus, RefreshCw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
@@ -27,10 +27,28 @@ import {
   useProprietaLeadList,
   useCambioFase,
   useTaskCountPerFase,
+  useGeneraTaskPerFase,
 } from '@/lib/hooks'
-import { FASI_LEAD } from '@/constants'
+import { FASI_LEAD, MOTIVI_LEAD_PERSO } from '@/constants'
 import { formatDate, getFullName } from '@/lib/utils'
-import type { FaseLead } from '@/types/database'
+import type { FaseLead, MotivoLeadPerso } from '@/types/database'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 
 export default function LeadDetailPage() {
   const params = useParams()
@@ -40,6 +58,8 @@ export default function LeadDetailPage() {
   const [convertDialogOpen, setConvertDialogOpen] = useState(false)
   const [lostDialogOpen, setLostDialogOpen] = useState(false)
   const [faseError, setFaseError] = useState<string | null>(null)
+  const [motivoPerso, setMotivoPerso] = useState<MotivoLeadPerso | ''>('')
+  const [notePerso, setNotePerso] = useState('')
 
   const { data: lead, isLoading } = useContatto(id)
   const { data: proprietaLead } = useProprietaLeadList(id)
@@ -48,6 +68,7 @@ export default function LeadDetailPage() {
   const convertToCliente = useConvertLeadToCliente()
   const markAsLost = useMarkLeadAsLost()
   const deleteContatto = useDeleteContatto()
+  const generaTask = useGeneraTaskPerFase()
 
   if (isLoading) {
     return <LoadingPage />
@@ -107,8 +128,15 @@ export default function LeadDetailPage() {
   }
 
   const handleMarkAsLost = async () => {
-    await markAsLost.mutateAsync({ id: lead.id, motivo: 'Non interessato' })
+    if (!motivoPerso) return
+    await markAsLost.mutateAsync({
+      id: lead.id,
+      motivoCodice: motivoPerso,
+      note: notePerso || undefined,
+    })
     setLostDialogOpen(false)
+    setMotivoPerso('')
+    setNotePerso('')
   }
 
   const handleDelete = async () => {
@@ -116,8 +144,19 @@ export default function LeadDetailPage() {
     router.push('/lead')
   }
 
+  const handleGeneraTask = async () => {
+    if (!lead.fase_lead) return
+    await generaTask.mutateAsync({
+      tipoEntita: 'lead',
+      fase: lead.fase_lead,
+      entityId: lead.id,
+    })
+  }
+
   const canConvert = lead.fase_lead === 'L3' && lead.esito_lead === 'in_corso'
   const isClosedLead = lead.esito_lead !== 'in_corso'
+  const currentFaseKey = lead.fase_lead || 'L0'
+  const hasTaskForCurrentPhase = (taskCounts && taskCounts[currentFaseKey]?.totali > 0) || false
 
   return (
     <div className="space-y-6">
@@ -242,11 +281,31 @@ export default function LeadDetailPage() {
 
       {/* Cosa Manca */}
       {!isClosedLead && (
-        <CosaMancaCard
-          tipoEntita="lead"
-          fase={lead.fase_lead || 'L0'}
-          entityId={lead.id}
-        />
+        <div className="space-y-4">
+          {!hasTaskForCurrentPhase && (
+            <Card className="border-blue-200 bg-blue-50/50">
+              <CardContent className="py-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-medium">Nessun task per questa fase</p>
+                    <p className="text-sm text-muted-foreground">
+                      Genera i task dalla checklist predefinita per la fase {lead.fase_lead}
+                    </p>
+                  </div>
+                  <Button onClick={handleGeneraTask} disabled={generaTask.isPending}>
+                    <RefreshCw className={`h-4 w-4 mr-2 ${generaTask.isPending ? 'animate-spin' : ''}`} />
+                    {generaTask.isPending ? 'Generazione...' : 'Genera Task'}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+          <CosaMancaCard
+            tipoEntita="lead"
+            fase={lead.fase_lead || 'L0'}
+            entityId={lead.id}
+          />
+        </div>
       )}
 
       {/* Grid principale */}
@@ -318,10 +377,17 @@ export default function LeadDetailPage() {
                   <p className="text-sm text-muted-foreground">Data Creazione</p>
                   <p className="font-medium">{formatDate(lead.created_at)}</p>
                 </div>
-                {lead.motivo_perso && (
+                {(lead.motivo_perso_codice || lead.motivo_perso) && (
                   <div>
                     <p className="text-sm text-muted-foreground">Motivo Perso</p>
-                    <p className="font-medium text-red-600">{lead.motivo_perso}</p>
+                    <p className="font-medium text-red-600">
+                      {lead.motivo_perso_codice
+                        ? MOTIVI_LEAD_PERSO.find(m => m.id === lead.motivo_perso_codice)?.label || lead.motivo_perso_codice
+                        : lead.motivo_perso}
+                    </p>
+                    {lead.motivo_perso && lead.motivo_perso_codice && (
+                      <p className="text-sm text-muted-foreground mt-1">{lead.motivo_perso}</p>
+                    )}
                   </div>
                 )}
               </div>
@@ -408,16 +474,65 @@ export default function LeadDetailPage() {
         isLoading={convertToCliente.isPending}
       />
 
-      <ConfirmDialog
-        open={lostDialogOpen}
-        onOpenChange={setLostDialogOpen}
-        title="Segna come Perso"
-        description="Il lead verrà segnato come perso. Potrai comunque visualizzarlo nella lista."
-        confirmText="Conferma"
-        variant="destructive"
-        onConfirm={handleMarkAsLost}
-        isLoading={markAsLost.isPending}
-      />
+      {/* Dialog Segna come Perso */}
+      <Dialog open={lostDialogOpen} onOpenChange={(open) => {
+        setLostDialogOpen(open)
+        if (!open) {
+          setMotivoPerso('')
+          setNotePerso('')
+        }
+      }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Segna come Perso</DialogTitle>
+            <DialogDescription>
+              Seleziona il motivo per cui il lead non è andato a buon fine.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="motivo">Motivo *</Label>
+              <Select value={motivoPerso} onValueChange={(v) => setMotivoPerso(v as MotivoLeadPerso)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleziona un motivo" />
+                </SelectTrigger>
+                <SelectContent>
+                  {MOTIVI_LEAD_PERSO.map((motivo) => (
+                    <SelectItem key={motivo.id} value={motivo.id}>
+                      <div className="flex flex-col">
+                        <span>{motivo.label}</span>
+                        <span className="text-xs text-muted-foreground">{motivo.description}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="note">Note aggiuntive</Label>
+              <Textarea
+                id="note"
+                placeholder="Dettagli aggiuntivi sul motivo..."
+                value={notePerso}
+                onChange={(e) => setNotePerso(e.target.value)}
+                rows={3}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setLostDialogOpen(false)}>
+              Annulla
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleMarkAsLost}
+              disabled={!motivoPerso || markAsLost.isPending}
+            >
+              {markAsLost.isPending ? 'Salvataggio...' : 'Conferma'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

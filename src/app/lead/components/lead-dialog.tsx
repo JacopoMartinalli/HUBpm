@@ -63,6 +63,7 @@ export function LeadDialog({ open, onOpenChange }: LeadDialogProps) {
       cap: null,
       provincia: null,
       motivo_perso: null,
+      motivo_perso_codice: null,
       fase_cliente: null,
       data_conversione: null,
       data_inizio_contratto: null,

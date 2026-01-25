@@ -1,15 +1,17 @@
 'use client'
 
 import { useParams, useRouter } from 'next/navigation'
-import { ArrowLeft, Building2, MapPin, Users, Bed, Bath, Square, Wifi, Key, Calendar, Edit, Trash2, Plus, Home, Package, Boxes } from 'lucide-react'
+import { ArrowLeft, Building2, MapPin, Users, Bed, Bath, Square, Wifi, Key, Calendar, Edit, Trash2, Plus, Home, Package, Boxes, FileText } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Separator } from '@/components/ui/separator'
-import { LoadingSpinner, FaseBadge, ConfirmDialog, PageHeader, DataTable, Column, DocumentiList, CosaMancaCard } from '@/components/shared'
+import { LoadingSpinner, FaseBadge, ConfirmDialog, PageHeader, DataTable, Column, DocumentiList } from '@/components/shared'
 import { ErogazioneProprietaView } from '@/components/erogazione'
-import { useProprieta, useUpdateProprieta, useDeleteProprieta, useLocaliByProprieta, useAssetByProprieta, useCambioFase, useTaskCountPerFase } from '@/lib/hooks'
+import { PipelineProprietaCard } from '@/components/proprieta'
+import { ProposteProprietaView } from '@/components/proposte'
+import { useProprieta, useUpdateProprieta, useDeleteProprieta, useLocaliByProprieta, useAssetByProprieta, useCambioFase, useErogazionePacchettiByProprieta } from '@/lib/hooks'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { AlertTriangle } from 'lucide-react'
 import { formatCurrency, formatPercent } from '@/lib/utils'
@@ -27,8 +29,8 @@ export default function ProprietaDetailPage() {
   const { mutate: deleteProprieta } = useDeleteProprieta()
   const { data: locali } = useLocaliByProprieta(id)
   const { data: asset } = useAssetByProprieta(id)
-  const { data: taskCounts } = useTaskCountPerFase('proprieta', id)
   const cambioFase = useCambioFase()
+  const { data: erogazioni } = useErogazionePacchettiByProprieta(id)
 
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [activeTab, setActiveTab] = useState('info')
@@ -163,77 +165,30 @@ export default function ProprietaDetailPage() {
       </div>
 
       {/* Pipeline Progress */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Pipeline Proprietà</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex gap-2">
-            {FASI_PROPRIETA.map((fase, index) => {
-              const isActive = fase.id === proprieta.fase
-              const isPast = FASI_PROPRIETA.findIndex(f => f.id === proprieta.fase) > index
-              const count = taskCounts?.[fase.id]
-
-              return (
-                <button
-                  key={fase.id}
-                  onClick={() => handleFaseChange(fase.id)}
-                  disabled={cambioFase.isPending}
-                  className={`flex-1 p-3 rounded-lg border text-left transition-colors ${
-                    isActive
-                      ? 'bg-primary text-primary-foreground border-primary'
-                      : isPast
-                      ? 'bg-primary/10 border-primary/30'
-                      : 'hover:bg-muted'
-                  } ${cambioFase.isPending ? 'opacity-50 cursor-not-allowed' : ''}`}
-                >
-                  <div className="flex items-center justify-between">
-                    <p className="font-medium text-sm">{fase.id}</p>
-                    {count && count.totali > 0 && (
-                      <span
-                        className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${
-                          count.completati === count.totali
-                            ? isActive
-                              ? 'bg-green-500/30 text-green-100'
-                              : 'bg-green-100 text-green-700'
-                            : isActive
-                              ? 'bg-primary-foreground/20 text-primary-foreground'
-                              : 'bg-muted text-muted-foreground'
-                        }`}
-                      >
-                        {count.completati}/{count.totali}
-                      </span>
-                    )}
-                  </div>
-                  <p className={`text-xs ${isActive ? 'text-primary-foreground/80' : 'text-muted-foreground'}`}>
-                    {fase.label}
-                  </p>
-                </button>
-              )
-            })}
-          </div>
-          {faseError && (
-            <Alert variant="destructive" className="mt-4">
-              <AlertTriangle className="h-4 w-4" />
-              <AlertTitle>Impossibile cambiare fase</AlertTitle>
-              <AlertDescription>{faseError}</AlertDescription>
-            </Alert>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Cosa Manca Card */}
-      <CosaMancaCard
-        tipoEntita="proprieta"
-        fase={proprieta.fase}
-        entityId={id}
-        contattoId={proprieta.contatto_id}
-        onNavigateToDocumenti={() => setActiveTab('documenti')}
+      <PipelineProprietaCard
+        faseCorrente={proprieta.fase}
+        proprietaId={id}
+        onCambioFase={(nuovaFase) => handleFaseChange(nuovaFase)}
+        isCambioFaseLoading={cambioFase.isPending}
+        pacchettiAttivi={erogazioni?.map(e => e.pacchetto?.nome || '') || []}
+        onNavigateToServizi={() => setActiveTab(proprieta.fase === 'P1' ? 'proposte' : 'servizi')}
       />
+
+      {faseError && (
+        <Alert variant="destructive">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle>Impossibile cambiare fase</AlertTitle>
+          <AlertDescription>{faseError}</AlertDescription>
+        </Alert>
+      )}
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
           <TabsTrigger value="info">Informazioni</TabsTrigger>
+          <TabsTrigger value="proposte" className="flex items-center gap-1.5">
+            <FileText className="h-3.5 w-3.5" />
+            Proposte
+          </TabsTrigger>
           <TabsTrigger value="servizi" className="flex items-center gap-1.5">
             <Boxes className="h-3.5 w-3.5" />
             Servizi
@@ -399,6 +354,15 @@ export default function ProprietaDetailPage() {
               </CardContent>
             </Card>
           </div>
+        </TabsContent>
+
+        <TabsContent value="proposte" className="mt-6">
+          <ProposteProprietaView
+            proprietaId={id}
+            contattoId={proprieta.contatto_id}
+            proprietaNome={proprieta.nome}
+            faseProprieta={proprieta.fase}
+          />
         </TabsContent>
 
         <TabsContent value="servizi" className="mt-6">

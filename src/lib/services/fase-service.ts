@@ -27,8 +27,10 @@ export interface CambioFaseResult {
 // COSTANTI FASI
 // ============================================
 
-const FASI_LEAD = ['L0', 'L1', 'L2', 'L3'] // L0: Primo Contatto, L1: Qualifica in Corso, L2: Lead Qualificato, L3: Pronto Conversione
-const FASI_PROPRIETA_LEAD = ['PL0', 'PL1', 'PL2', 'PL3', 'PL4'] // PL0: Registrata, PL1: Raccolta Info, PL2: Valutazione, PL3: Proposta, PL4: Qualificata
+// L0: Nuovo Lead, L1: Contattato, L2: In Valutazione, L3: Qualificato
+const FASI_LEAD = ['L0', 'L1', 'L2', 'L3']
+// PL0: Registrata, PL1: Info Raccolte, PL2: Sopralluogo, PL3: Valutata
+const FASI_PROPRIETA_LEAD = ['PL0', 'PL1', 'PL2', 'PL3']
 const FASI_CLIENTE = ['C0', 'C1', 'C2', 'C3']
 const FASI_PROPRIETA = ['P0', 'P1', 'P2', 'P3', 'P4', 'P5']
 
@@ -37,7 +39,7 @@ const FASI_CON_BLOCCO_DOCUMENTI: Record<TipoEntita, string[]> = {
   lead: [], // Lead non ha blocchi documenti
   proprieta_lead: [], // Proprieta lead non ha blocchi documenti
   cliente: ['C0'], // C0 richiede documenti obbligatori per passare a C1
-  proprieta: ['P0', 'P1'], // P0 e P1 richiedono documenti obbligatori
+  proprieta: [], // P0 -> P1 libero, P1 -> P2 gestito da accettazione proposta
 }
 
 // Blocchi speciali per lead e proprieta_lead
@@ -49,12 +51,12 @@ interface BloccoSpeciale {
 
 const BLOCCHI_SPECIALI: Record<TipoEntita, Record<string, BloccoSpeciale>> = {
   lead: {
-    // L0 -> L1: Discovery call completata (soft block - puoi forzare)
-    'L0': { tipo: 'soft', condizione: 'discovery_call', messaggio: 'Discovery call non ancora completata' },
+    // L0 -> L1: Prima chiamata completata (soft block - puoi forzare)
+    'L0': { tipo: 'soft', condizione: 'prima_chiamata', messaggio: 'Prima chiamata non ancora completata' },
     // L1 -> L2: Almeno 1 proprieta lead aggiunta (hard block)
-    'L1': { tipo: 'hard', condizione: 'proprieta_lead', messaggio: 'Aggiungi almeno una proprieta lead per procedere' },
-    // L2 -> L3: Almeno 1 proprieta in PL3+ (hard block)
-    'L2': { tipo: 'hard', condizione: 'proprieta_qualificata', messaggio: 'Almeno una proprieta deve essere in fase Proposta o superiore' },
+    'L1': { tipo: 'hard', condizione: 'proprieta_lead', messaggio: 'Aggiungi almeno una proprietà lead per procedere' },
+    // L2 -> L3: Almeno 1 proprieta in PL3 (Valutata) (hard block)
+    'L2': { tipo: 'hard', condizione: 'proprieta_valutata', messaggio: 'Almeno una proprietà deve essere in fase Valutata (PL3)' },
   },
   proprieta_lead: {},
   cliente: {},
@@ -135,14 +137,14 @@ async function verificaBloccoSpeciale(
   entityId: string
 ): Promise<{ superato: boolean }> {
   switch (blocco.condizione) {
-    case 'discovery_call': {
-      // Verifica se il task "Discovery call" o "Primo contatto" e completato
+    case 'prima_chiamata': {
+      // Verifica se il task "Prima chiamata" o simile è completato
       const { data: tasks } = await supabase
         .from('task')
         .select('stato')
         .eq('tenant_id', DEFAULT_TENANT_ID)
         .eq('contatto_id', entityId)
-        .or('titolo.ilike.%discovery%,titolo.ilike.%primo contatto%')
+        .or('titolo.ilike.%prima chiamata%,titolo.ilike.%primo contatto%,titolo.ilike.%qualifica%')
         .eq('stato', 'completato')
 
       return { superato: (tasks?.length || 0) > 0 }
@@ -161,15 +163,15 @@ async function verificaBloccoSpeciale(
       return { superato: (proprieta?.length || 0) > 0 }
     }
 
-    case 'proprieta_qualificata': {
-      // Verifica se almeno 1 proprieta e in fase PL3 o superiore
+    case 'proprieta_valutata': {
+      // Verifica se almeno 1 proprieta è in fase PL3 (Valutata)
       const { data: proprieta } = await supabase
         .from('proprieta_lead')
         .select('fase')
         .eq('tenant_id', DEFAULT_TENANT_ID)
         .eq('contatto_id', entityId)
         .eq('esito', 'in_corso')
-        .in('fase', ['PL3', 'PL4'])
+        .eq('fase', 'PL3')
         .limit(1)
 
       return { superato: (proprieta?.length || 0) > 0 }

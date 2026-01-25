@@ -521,5 +521,37 @@ export function useTaskCountPerFase(
   })
 }
 
+// ============================================
+// HOOK: Genera task per fase
+// ============================================
+
+export function useGeneraTaskPerFase() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({
+      tipoEntita,
+      fase,
+      entityId,
+      contattoId,
+    }: {
+      tipoEntita: TipoEntita
+      fase: string
+      entityId: string
+      contattoId?: string
+    }) => {
+      // Importa dinamicamente per evitare circular dependency
+      const { generaTaskPerFase } = await import('@/lib/services/fase-service')
+      return generaTaskPerFase(tipoEntita, fase, entityId, contattoId)
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['task-per-entita', variables.tipoEntita, variables.entityId] })
+      queryClient.invalidateQueries({ queryKey: ['task-count-per-fase', variables.tipoEntita, variables.entityId] })
+      queryClient.invalidateQueries({ queryKey: ['stato-completamento-fase', variables.tipoEntita] })
+      queryClient.invalidateQueries({ queryKey: taskKeys.lists() })
+    },
+  })
+}
+
 // Re-export types and utilities from fase-service
 export { getFaseSuccessiva, getProgressoFase, type TipoEntita }

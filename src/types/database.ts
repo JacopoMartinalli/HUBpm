@@ -9,9 +9,12 @@ export type TipoPersona = 'persona_fisica' | 'persona_giuridica'
 export type FaseLead = 'L0' | 'L1' | 'L2' | 'L3'
 export type EsitoLead = 'in_corso' | 'vinto' | 'perso'
 
-// Fasi Proprietà Lead
-export type FaseProprietaLead = 'PL0' | 'PL1' | 'PL2' | 'PL3' | 'PL4'
+// Fasi Proprietà Lead (PL0-PL3, rimossa PL4)
+export type FaseProprietaLead = 'PL0' | 'PL1' | 'PL2' | 'PL3'
 export type EsitoProprietaLead = 'in_corso' | 'confermato' | 'scartato'
+
+// Motivi Lead Perso
+export type MotivoLeadPerso = 'prezzo' | 'competitor' | 'non_risponde' | 'tempistiche' | 'proprieta_non_idonea' | 'cambio_idea' | 'altro'
 
 // Fasi Cliente
 export type FaseCliente = 'C0' | 'C1' | 'C2' | 'C3'
@@ -99,6 +102,7 @@ export interface Contatto {
   fonte_lead: string | null
   valore_stimato: number | null
   motivo_perso: string | null
+  motivo_perso_codice: MotivoLeadPerso | null
   // Cliente
   fase_cliente: FaseCliente | null
   data_conversione: string | null
@@ -766,6 +770,92 @@ export interface CatalogoServizioInsert {
   vendibile_singolarmente?: boolean
 }
 export type CatalogoServizioUpdate = Partial<Omit<CatalogoServizioInsert, 'tenant_id'>>
+
+// ============================================
+// PROPOSTE COMMERCIALI
+// ============================================
+
+export type StatoProposta = 'bozza' | 'inviata' | 'accettata' | 'rifiutata' | 'scaduta'
+
+export interface PropostaCommerciale {
+  id: string
+  tenant_id: string
+  proprieta_id: string
+  contatto_id: string
+  numero: string | null
+  titolo: string | null
+  descrizione: string | null
+  stato: StatoProposta
+  data_creazione: string
+  data_invio: string | null
+  data_scadenza: string | null
+  data_risposta: string | null
+  subtotale: number
+  sconto_percentuale: number
+  sconto_fisso: number
+  totale: number
+  note_interne: string | null
+  note_cliente: string | null
+  motivo_rifiuto: string | null
+  created_at: string
+  updated_at: string
+  created_by: string | null
+  // Relazioni
+  proprieta?: Proprieta
+  contatto?: Contatto
+  items?: PropostaCommercialeItem[]
+}
+
+export interface PropostaCommercialeItem {
+  id: string
+  proposta_id: string
+  servizio_id: string | null
+  pacchetto_id: string | null
+  nome: string
+  descrizione: string | null
+  quantita: number
+  prezzo_unitario: number
+  sconto_percentuale: number
+  prezzo_totale: number
+  ordine: number
+  note: string | null
+  created_at: string
+  // Relazioni
+  servizio?: CatalogoServizio
+  pacchetto?: PacchettoServizio
+}
+
+export interface PropostaCommercialeInsert {
+  tenant_id: string
+  proprieta_id: string
+  contatto_id: string
+  titolo?: string | null
+  descrizione?: string | null
+  stato?: StatoProposta
+  data_scadenza?: string | null
+  sconto_percentuale?: number
+  sconto_fisso?: number
+  note_interne?: string | null
+  note_cliente?: string | null
+}
+
+export type PropostaCommercialeUpdate = Partial<Omit<PropostaCommercialeInsert, 'tenant_id' | 'proprieta_id' | 'contatto_id'>>
+
+export interface PropostaCommercialeItemInsert {
+  proposta_id: string
+  servizio_id?: string | null
+  pacchetto_id?: string | null
+  nome: string
+  descrizione?: string | null
+  quantita?: number
+  prezzo_unitario: number
+  sconto_percentuale?: number
+  prezzo_totale?: number
+  ordine?: number
+  note?: string | null
+}
+
+export type PropostaCommercialeItemUpdate = Partial<Omit<PropostaCommercialeItemInsert, 'proposta_id'>>
 
 // ============================================
 // PROPERTY MANAGER (Dati Aziendali PM)
