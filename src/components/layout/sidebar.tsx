@@ -43,11 +43,6 @@ const navigation: NavSection[] = [
         href: '/',
         icon: LayoutDashboard,
       },
-      {
-        title: 'Task',
-        href: '/task',
-        icon: CheckSquare,
-      },
     ],
   },
   {
@@ -57,11 +52,6 @@ const navigation: NavSection[] = [
         title: 'Lead',
         href: '/lead',
         icon: Target,
-      },
-      {
-        title: 'Proprietà Lead',
-        href: '/proprieta-lead',
-        icon: Building2,
       },
     ],
   },
@@ -79,13 +69,8 @@ const navigation: NavSection[] = [
         icon: Home,
       },
       {
-        title: 'Prenotazioni',
-        href: '/prenotazioni',
-        icon: CalendarDays,
-      },
-      {
-        title: 'Partner',
-        href: '/partner',
+        title: 'Contatti',
+        href: '/contatti',
         icon: Handshake,
       },
     ],

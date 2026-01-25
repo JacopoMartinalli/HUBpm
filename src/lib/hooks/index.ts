@@ -36,3 +36,6 @@ export * from './use-fase'
 
 // Property Manager (dati aziendali)
 export * from './use-property-manager'
+
+// Erogazione Servizi (pacchetti, servizi, task per proprietà)
+export * from './use-erogazione'

@@ -1,13 +1,14 @@
 'use client'
 
 import { useParams, useRouter } from 'next/navigation'
-import { ArrowLeft, Building2, MapPin, Users, Bed, Bath, Square, Wifi, Key, Calendar, Edit, Trash2, Plus, Home, Package } from 'lucide-react'
+import { ArrowLeft, Building2, MapPin, Users, Bed, Bath, Square, Wifi, Key, Calendar, Edit, Trash2, Plus, Home, Package, Boxes } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Separator } from '@/components/ui/separator'
 import { LoadingSpinner, FaseBadge, ConfirmDialog, PageHeader, DataTable, Column, DocumentiList, CosaMancaCard } from '@/components/shared'
+import { ErogazioneProprietaView } from '@/components/erogazione'
 import { useProprieta, useUpdateProprieta, useDeleteProprieta, useLocaliByProprieta, useAssetByProprieta, useCambioFase, useTaskCountPerFase } from '@/lib/hooks'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { AlertTriangle } from 'lucide-react'
@@ -233,6 +234,10 @@ export default function ProprietaDetailPage() {
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
           <TabsTrigger value="info">Informazioni</TabsTrigger>
+          <TabsTrigger value="servizi" className="flex items-center gap-1.5">
+            <Boxes className="h-3.5 w-3.5" />
+            Servizi
+          </TabsTrigger>
           <TabsTrigger value="locali">Locali ({locali?.length || 0})</TabsTrigger>
           <TabsTrigger value="asset">Asset ({asset?.length || 0})</TabsTrigger>
           <TabsTrigger value="operativo">Operativo</TabsTrigger>
@@ -394,6 +399,13 @@ export default function ProprietaDetailPage() {
               </CardContent>
             </Card>
           </div>
+        </TabsContent>
+
+        <TabsContent value="servizi" className="mt-6">
+          <ErogazioneProprietaView
+            proprietaId={id}
+            proprietaNome={proprieta.nome}
+          />
         </TabsContent>
 
         <TabsContent value="locali" className="mt-6">
