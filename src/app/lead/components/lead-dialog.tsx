@@ -73,6 +73,7 @@ export function LeadDialog({ open, onOpenChange }: LeadDialogProps) {
       specializzazioni: null,
       tariffa_default: null,
       tariffa_tipo: null,
+      numero_proprieta: 1, // Default: 1 proprietà per lead
     })
 
     // Reset form and close

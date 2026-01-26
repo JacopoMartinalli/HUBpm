@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, Trash2, UserCheck, UserX, Building2, AlertTriangle, ChevronRight, ChevronLeft, Plus, RefreshCw } from 'lucide-react'
+import { ArrowLeft, Trash2, UserCheck, UserX, Building2, AlertTriangle, ChevronRight, ChevronLeft, Plus, RefreshCw, Home, Pencil } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
@@ -21,14 +21,17 @@ import {
 } from '@/components/shared'
 import {
   useContatto,
+  useUpdateContatto,
   useConvertLeadToCliente,
   useMarkLeadAsLost,
   useDeleteContatto,
-  useProprietaLeadList,
+  useProprietaByContatto,
   useCambioFase,
   useTaskCountPerFase,
   useGeneraTaskPerFase,
 } from '@/lib/hooks'
+import { ProprietaDialog } from '@/app/proprieta/components/proprieta-dialog'
+import { CreaProprietaWizard } from '@/app/lead/components/crea-proprieta-wizard'
 import { FASI_LEAD, MOTIVI_LEAD_PERSO } from '@/constants'
 import { formatDate, getFullName } from '@/lib/utils'
 import type { FaseLead, MotivoLeadPerso } from '@/types/database'
@@ -49,6 +52,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { Input } from '@/components/ui/input'
 
 export default function LeadDetailPage() {
   const params = useParams()
@@ -57,18 +61,21 @@ export default function LeadDetailPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [convertDialogOpen, setConvertDialogOpen] = useState(false)
   const [lostDialogOpen, setLostDialogOpen] = useState(false)
+  const [proprietaDialogOpen, setProprietaDialogOpen] = useState(false)
+  const [avanzaL1DialogOpen, setAvanzaL1DialogOpen] = useState(false)
   const [faseError, setFaseError] = useState<string | null>(null)
   const [motivoPerso, setMotivoPerso] = useState<MotivoLeadPerso | ''>('')
   const [notePerso, setNotePerso] = useState('')
 
   const { data: lead, isLoading } = useContatto(id)
-  const { data: proprietaLead } = useProprietaLeadList(id)
+  const { data: proprieta } = useProprietaByContatto(id)
   const { data: taskCounts } = useTaskCountPerFase('lead', id)
   const cambioFase = useCambioFase()
   const convertToCliente = useConvertLeadToCliente()
   const markAsLost = useMarkLeadAsLost()
   const deleteContatto = useDeleteContatto()
   const generaTask = useGeneraTaskPerFase()
+  const updateContatto = useUpdateContatto()
 
   if (isLoading) {
     return <LoadingPage />
@@ -90,6 +97,14 @@ export default function LeadDetailPage() {
 
   const handleAvanzaFase = async () => {
     if (!nextFase) return
+
+    // Se stiamo passando da L0 a L1 e NON ci sono proprietà, mostra il wizard
+    // Se ci sono già proprietà (es. retrocesso da L1 e ritorna), passa direttamente
+    if (lead.fase_lead === 'L0' && nextFase.id === 'L1' && (!proprieta || proprieta.length === 0)) {
+      setAvanzaL1DialogOpen(true)
+      return
+    }
+
     setFaseError(null)
     try {
       await cambioFase.mutateAsync({
@@ -103,6 +118,14 @@ export default function LeadDetailPage() {
         setFaseError(error.message)
       }
     }
+  }
+
+  // Aggiorna il numero di proprietà sul lead
+  const handleUpdateNumeroProprieta = async (value: number) => {
+    await updateContatto.mutateAsync({
+      id: lead.id,
+      numero_proprieta: value,
+    })
   }
 
   const handleTornaIndietro = async () => {
@@ -193,38 +216,39 @@ export default function LeadDetailPage() {
                 const isCurrent = index === currentFaseIndex
                 const isPending = index > currentFaseIndex
                 const count = taskCounts?.[fase.id]
+                // Mostra contatore solo per la fase corrente (non per le completate o future)
+                const showCount = isCurrent && count && count.totali > 0
 
                 return (
                   <div key={fase.id} className="flex items-center">
-                    <div className="flex flex-col items-center">
-                      <div
-                        className={`
-                          flex items-center justify-center rounded-full text-xs font-medium transition-all
-                          ${isCurrent ? 'h-10 w-10 bg-primary text-primary-foreground' : 'h-8 w-8'}
-                          ${isCompleted && 'bg-green-500 text-white'}
-                          ${isPending && 'bg-muted text-muted-foreground'}
-                        `}
-                        title={fase.label}
-                      >
-                        {fase.id}
-                      </div>
-                      {count && count.totali > 0 && (
-                        <span
-                          className={`text-[10px] font-medium mt-0.5 ${
-                            count.completati === count.totali
-                              ? 'text-green-600'
-                              : isCompleted || isCurrent
-                                ? 'text-muted-foreground'
-                                : 'text-muted-foreground/50'
-                          }`}
+                    <div className="flex flex-col items-center min-w-[44px]">
+                      {/* Container per mantenere allineamento verticale */}
+                      <div className="h-11 flex items-center justify-center">
+                        <div
+                          className={`
+                            flex items-center justify-center rounded-full font-medium transition-all
+                            ${isCurrent ? 'h-11 w-11 text-sm bg-primary text-primary-foreground shadow-lg' : 'h-8 w-8 text-xs'}
+                            ${isCompleted && 'bg-green-500 text-white'}
+                            ${isPending && 'bg-muted text-muted-foreground'}
+                          `}
+                          title={fase.label}
                         >
-                          {count.completati}/{count.totali}
-                        </span>
-                      )}
+                          {fase.id}
+                        </div>
+                      </div>
+                      {/* Spazio riservato per il contatore - sempre presente per allineamento */}
+                      <div className="h-4 flex items-center justify-center">
+                        {showCount && (
+                          <span className="text-[10px] font-medium text-muted-foreground">
+                            {count.completati}/{count.totali}
+                          </span>
+                        )}
+                      </div>
                     </div>
                     {index < FASI_LEAD.length - 1 && (
                       <div
-                        className={`h-1 w-6 mx-1 rounded self-start mt-4 ${isCompleted ? 'bg-green-500' : 'bg-muted'}`}
+                        className={`h-1 w-6 mx-1 rounded ${isCompleted ? 'bg-green-500' : 'bg-muted'}`}
+                        style={{ marginTop: '-16px' }} // Allinea la linea al centro dei pallini
                       />
                     )}
                   </div>
@@ -308,149 +332,197 @@ export default function LeadDetailPage() {
         </div>
       )}
 
-      {/* Grid principale */}
-      <div className="grid gap-6 lg:grid-cols-3">
-        {/* Colonna sinistra - Info Lead */}
-        <div className="lg:col-span-2 space-y-6">
-          <div className="grid gap-6 md:grid-cols-2">
-            {/* Anagrafica */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Anagrafica</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-sm text-muted-foreground">Nome</p>
-                    <p className="font-medium">{lead.nome}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Cognome</p>
-                    <p className="font-medium">{lead.cognome}</p>
-                  </div>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Tipo</p>
-                  <p className="font-medium">
-                    {lead.tipo_persona === 'persona_giuridica' ? 'Società' : 'Persona Fisica'}
-                  </p>
-                </div>
-                {lead.codice_fiscale && (
-                  <div>
-                    <p className="text-sm text-muted-foreground">Codice Fiscale</p>
-                    <p className="font-medium">{lead.codice_fiscale}</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+      {/* Grid Info Lead */}
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        {/* Anagrafica */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Anagrafica</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <p className="text-sm text-muted-foreground">Nome</p>
+                <p className="font-medium">{lead.nome}</p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Cognome</p>
+                <p className="font-medium">{lead.cognome}</p>
+              </div>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Tipo</p>
+              <p className="font-medium">
+                {lead.tipo_persona === 'persona_giuridica' ? 'Società' : 'Persona Fisica'}
+              </p>
+            </div>
+            {lead.codice_fiscale && (
+              <div>
+                <p className="text-sm text-muted-foreground">Codice Fiscale</p>
+                <p className="font-medium">{lead.codice_fiscale}</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
-            {/* Contatti */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Contatti</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <p className="text-sm text-muted-foreground">Email</p>
-                  <p className="font-medium">{lead.email || '-'}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Telefono</p>
-                  <p className="font-medium">{lead.telefono || '-'}</p>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+        {/* Contatti */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Contatti</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <p className="text-sm text-muted-foreground">Email</p>
+              <p className="font-medium">{lead.email || '-'}</p>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Telefono</p>
+              <p className="font-medium">{lead.telefono || '-'}</p>
+            </div>
+          </CardContent>
+        </Card>
 
-          {/* Dettagli Lead */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Dettagli Lead</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                <div>
-                  <p className="text-sm text-muted-foreground">Fonte</p>
-                  <p className="font-medium">{lead.fonte_lead || '-'}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Data Creazione</p>
-                  <p className="font-medium">{formatDate(lead.created_at)}</p>
-                </div>
-                {(lead.motivo_perso_codice || lead.motivo_perso) && (
-                  <div>
-                    <p className="text-sm text-muted-foreground">Motivo Perso</p>
-                    <p className="font-medium text-red-600">
-                      {lead.motivo_perso_codice
-                        ? MOTIVI_LEAD_PERSO.find(m => m.id === lead.motivo_perso_codice)?.label || lead.motivo_perso_codice
-                        : lead.motivo_perso}
-                    </p>
-                    {lead.motivo_perso && lead.motivo_perso_codice && (
-                      <p className="text-sm text-muted-foreground mt-1">{lead.motivo_perso}</p>
-                    )}
-                  </div>
+        {/* Dettagli Lead */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Dettagli Lead</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <p className="text-sm text-muted-foreground">Fonte</p>
+              <p className="font-medium">{lead.fonte_lead || '-'}</p>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Data Creazione</p>
+              <p className="font-medium">{formatDate(lead.created_at)}</p>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground flex items-center gap-1">
+                <Home className="h-3 w-3" />
+                N. Proprietà
+              </p>
+              <div className="flex items-center gap-2">
+                <Input
+                  type="number"
+                  min="1"
+                  value={lead.numero_proprieta || 1}
+                  onChange={(e) => {
+                    const val = Math.max(1, parseInt(e.target.value) || 1)
+                    handleUpdateNumeroProprieta(val)
+                  }}
+                  className="w-16 h-8"
+                  disabled={isClosedLead}
+                />
+                {(proprieta?.length || 0) > 0 && (
+                  <span className="text-xs text-muted-foreground">
+                    ({proprieta?.length} create)
+                  </span>
                 )}
               </div>
-              {lead.note && (
-                <div className="mt-4 pt-4 border-t">
-                  <p className="text-sm text-muted-foreground mb-1">Note</p>
-                  <p className="text-sm">{lead.note}</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Colonna destra - Proprietà */}
-        <div>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-              <CardTitle className="text-lg">Proprietà in Valutazione</CardTitle>
-              <Button size="sm" asChild>
-                <Link href={`/proprieta-lead?leadId=${lead.id}`}>
-                  <Plus className="h-4 w-4 mr-1" />
-                  Aggiungi
-                </Link>
-              </Button>
-            </CardHeader>
-            <CardContent>
-              {proprietaLead && proprietaLead.length > 0 ? (
-                <div className="space-y-3">
-                  {proprietaLead.map((prop) => (
-                    <Link
-                      key={prop.id}
-                      href={`/proprieta-lead/${prop.id}`}
-                      className="block p-3 rounded-lg border hover:bg-accent transition-colors"
-                    >
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="min-w-0 flex-1">
-                          <p className="font-medium truncate">{prop.nome}</p>
-                          <p className="text-sm text-muted-foreground truncate">
-                            {prop.indirizzo}, {prop.citta}
-                          </p>
-                        </div>
-                        <FaseBadge fase={prop.fase} tipo="proprieta_lead" />
-                      </div>
-                    </Link>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-8">
-                  <Building2 className="h-10 w-10 mx-auto text-muted-foreground mb-2" />
-                  <p className="text-sm text-muted-foreground">
-                    Nessuna proprietà in valutazione
-                  </p>
-                  <Button variant="link" size="sm" asChild className="mt-2">
-                    <Link href={`/proprieta-lead?leadId=${lead.id}`}>
-                      Aggiungi la prima proprietà
-                    </Link>
-                  </Button>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
+            </div>
+            {(lead.motivo_perso_codice || lead.motivo_perso) && (
+              <div>
+                <p className="text-sm text-muted-foreground">Motivo Perso</p>
+                <p className="font-medium text-red-600">
+                  {lead.motivo_perso_codice
+                    ? MOTIVI_LEAD_PERSO.find(m => m.id === lead.motivo_perso_codice)?.label || lead.motivo_perso_codice
+                    : lead.motivo_perso}
+                </p>
+                {lead.motivo_perso && lead.motivo_perso_codice && (
+                  <p className="text-sm text-muted-foreground mt-1">{lead.motivo_perso}</p>
+                )}
+              </div>
+            )}
+            {lead.note && (
+              <div className="pt-4 border-t">
+                <p className="text-sm text-muted-foreground mb-1">Note</p>
+                <p className="text-sm">{lead.note}</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
+
+      {/* Proprietà in Valutazione - Full Width */}
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0">
+          <div>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Building2 className="h-5 w-5" />
+              Proprietà in Valutazione
+            </CardTitle>
+            <p className="text-sm text-muted-foreground mt-1">
+              {proprieta && proprieta.length > 0
+                ? `${proprieta.length} proprietà associate a questo lead`
+                : 'Nessuna proprietà ancora creata per questo lead'
+              }
+            </p>
+          </div>
+          <Button onClick={() => setProprietaDialogOpen(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            Aggiungi Proprietà
+          </Button>
+        </CardHeader>
+        <CardContent>
+          {proprieta && proprieta.length > 0 ? (
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {proprieta.map((prop) => (
+                <Link
+                  key={prop.id}
+                  href={`/proprieta/${prop.id}`}
+                  className="block"
+                >
+                  <Card className="hover:bg-accent/50 transition-colors cursor-pointer h-full">
+                    <CardContent className="pt-6">
+                      <div className="flex items-start justify-between gap-2 mb-3">
+                        <h3 className="font-semibold truncate">{prop.nome}</h3>
+                        <FaseBadge fase={prop.fase} tipo="proprieta" />
+                      </div>
+                      <div className="space-y-2 text-sm">
+                        <p className="text-muted-foreground flex items-center gap-1">
+                          <Home className="h-3.5 w-3.5" />
+                          {prop.tipologia ? prop.tipologia.charAt(0).toUpperCase() + prop.tipologia.slice(1).replace('_', ' ') : 'Non specificata'}
+                        </p>
+                        <p className="text-muted-foreground truncate">
+                          {prop.indirizzo}, {prop.citta}
+                        </p>
+                        <div className="flex items-center gap-4 text-xs text-muted-foreground pt-2 border-t">
+                          <span>{prop.camere || 0} camere</span>
+                          <span>{prop.bagni || 0} bagni</span>
+                          <span>{prop.max_ospiti || 0} ospiti</span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <Card className="border-dashed">
+              <CardContent className="flex flex-col items-center justify-center py-12">
+                <div className="rounded-full bg-muted p-4 mb-4">
+                  <Building2 className="h-8 w-8 text-muted-foreground" />
+                </div>
+                <h3 className="font-semibold mb-1">Nessuna proprietà</h3>
+                <p className="text-sm text-muted-foreground text-center mb-4 max-w-sm">
+                  Aggiungi la prima proprietà per questo lead o avanza alla fase L1 per crearle automaticamente
+                </p>
+                <Button variant="outline" onClick={() => setProprietaDialogOpen(true)}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Aggiungi Proprietà
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Dialog Nuova Proprietà */}
+      <ProprietaDialog
+        open={proprietaDialogOpen}
+        onOpenChange={setProprietaDialogOpen}
+        contattoId={lead.id}
+      />
 
       {/* Dialogs */}
       <ConfirmDialog
@@ -472,6 +544,15 @@ export default function LeadDetailPage() {
         confirmText="Converti"
         onConfirm={handleConvert}
         isLoading={convertToCliente.isPending}
+      />
+
+      {/* Wizard Creazione Proprietà L0 → L1 */}
+      <CreaProprietaWizard
+        open={avanzaL1DialogOpen}
+        onOpenChange={setAvanzaL1DialogOpen}
+        lead={lead}
+        proprietaEsistenti={proprieta || []}
+        onComplete={() => setFaseError(null)}
       />
 
       {/* Dialog Segna come Perso */}

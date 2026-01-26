@@ -103,6 +103,7 @@ export interface Contatto {
   valore_stimato: number | null
   motivo_perso: string | null
   motivo_perso_codice: MotivoLeadPerso | null
+  numero_proprieta: number | null
   // Cliente
   fase_cliente: FaseCliente | null
   data_conversione: string | null

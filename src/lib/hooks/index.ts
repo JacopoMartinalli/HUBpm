@@ -1,9 +1,6 @@
 // Contatti (Lead, Clienti, Partner)
 export * from './use-contatti'
 
-// Proprietà Lead
-export * from './use-proprieta-lead'
-
 // Proprietà
 export * from './use-proprieta'
 

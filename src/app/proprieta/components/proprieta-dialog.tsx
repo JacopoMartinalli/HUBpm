@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   Dialog,
   DialogContent,
@@ -18,16 +18,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { useCreateProprieta, useClienti, useCreateLocale } from '@/lib/hooks'
+import { useCreateProprieta, useClienti, useLeads, useCreateLocale, useContatto } from '@/lib/hooks'
 import { TIPOLOGIE_PROPRIETA, PROVINCE_ZONA } from '@/constants'
 import type { TipologiaProprieta, FaseProprieta, TipoLocale } from '@/types/database'
 
 interface ProprietaDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
+  contattoId?: string // ID del contatto (lead o cliente) pre-selezionato
 }
 
-export function ProprietaDialog({ open, onOpenChange }: ProprietaDialogProps) {
+export function ProprietaDialog({ open, onOpenChange, contattoId }: ProprietaDialogProps) {
   const [formData, setFormData] = useState({
     nome: '',
     indirizzo: '',
@@ -35,21 +36,38 @@ export function ProprietaDialog({ open, onOpenChange }: ProprietaDialogProps) {
     cap: '',
     provincia: '',
     tipologia: 'appartamento' as TipologiaProprieta,
-    contatto_id: '',
-    posti_letto: '',
-    camere: '',
-    bagni: '',
+    contatto_id: contattoId || '',
+    posti_letto: '2',
+    camere: '1',
+    bagni: '1',
   })
+
+  // Aggiorna contatto_id quando cambia contattoId prop
+  useEffect(() => {
+    if (contattoId) {
+      setFormData(prev => ({ ...prev, contatto_id: contattoId }))
+    }
+  }, [contattoId])
 
   const createProprieta = useCreateProprieta()
   const createLocale = useCreateLocale()
   const { data: clienti, isLoading: isLoadingClienti } = useClienti()
+  const { data: leads, isLoading: isLoadingLeads } = useLeads()
+  const { data: contattoPreselezionato } = useContatto(contattoId)
+
+  // Combina lead e clienti per la selezione
+  const contatti = [
+    ...(leads || []).map(l => ({ ...l, tipoLabel: 'Lead' })),
+    ...(clienti || []).map(c => ({ ...c, tipoLabel: 'Cliente' })),
+  ]
+  const isLoadingContatti = isLoadingClienti || isLoadingLeads
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    const numCamere = formData.camere ? parseInt(formData.camere) : 0
-    const numBagni = formData.bagni ? parseInt(formData.bagni) : 0
+    // Minimo 1 camera e 1 bagno
+    const numCamere = Math.max(1, formData.camere ? parseInt(formData.camere) : 1)
+    const numBagni = Math.max(1, formData.bagni ? parseInt(formData.bagni) : 1)
 
     // Crea la proprietà
     const nuovaProprieta = await createProprieta.mutateAsync({
@@ -149,10 +167,10 @@ export function ProprietaDialog({ open, onOpenChange }: ProprietaDialogProps) {
       cap: '',
       provincia: '',
       tipologia: 'appartamento',
-      contatto_id: '',
-      posti_letto: '',
-      camere: '',
-      bagni: '',
+      contatto_id: contattoId || '',
+      posti_letto: '2',
+      camere: '1',
+      bagni: '1',
     })
     onOpenChange(false)
   }
@@ -179,23 +197,41 @@ export function ProprietaDialog({ open, onOpenChange }: ProprietaDialogProps) {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="contatto_id">Cliente *</Label>
-                <Select
-                  value={formData.contatto_id}
-                  onValueChange={(value) => setFormData({ ...formData, contatto_id: value })}
-                  required
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder={isLoadingClienti ? "Caricamento..." : "Seleziona cliente"} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {clienti?.map((cliente) => (
-                      <SelectItem key={cliente.id} value={cliente.id}>
-                        {cliente.nome} {cliente.cognome}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Label htmlFor="contatto_id">Proprietario *</Label>
+                {contattoId && contattoPreselezionato ? (
+                  <div className="flex items-center h-10 px-3 border rounded-md bg-muted">
+                    <span className="font-medium">
+                      {contattoPreselezionato.nome} {contattoPreselezionato.cognome}
+                    </span>
+                    <span className="ml-2 text-xs text-muted-foreground">
+                      ({contattoPreselezionato.tipo === 'lead' ? 'Lead' : 'Cliente'})
+                    </span>
+                  </div>
+                ) : (
+                  <Select
+                    value={formData.contatto_id}
+                    onValueChange={(value) => setFormData({ ...formData, contatto_id: value })}
+                    required
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder={isLoadingContatti ? "Caricamento..." : "Seleziona proprietario"} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {contatti.length > 0 ? (
+                        contatti.map((contatto) => (
+                          <SelectItem key={contatto.id} value={contatto.id}>
+                            {contatto.nome} {contatto.cognome}
+                            <span className="ml-2 text-xs text-muted-foreground">
+                              ({contatto.tipoLabel})
+                            </span>
+                          </SelectItem>
+                        ))
+                      ) : (
+                        <SelectItem value="" disabled>Nessun contatto disponibile</SelectItem>
+                      )}
+                    </SelectContent>
+                  </Select>
+                )}
               </div>
             </div>
 
@@ -280,7 +316,7 @@ export function ProprietaDialog({ open, onOpenChange }: ProprietaDialogProps) {
                   id="posti_letto"
                   type="number"
                   min="1"
-                  placeholder="4"
+                  placeholder="2"
                   value={formData.posti_letto}
                   onChange={(e) => setFormData({ ...formData, posti_letto: e.target.value })}
                 />
@@ -290,10 +326,13 @@ export function ProprietaDialog({ open, onOpenChange }: ProprietaDialogProps) {
                 <Input
                   id="camere"
                   type="number"
-                  min="0"
-                  placeholder="2"
+                  min="1"
+                  placeholder="1"
                   value={formData.camere}
-                  onChange={(e) => setFormData({ ...formData, camere: e.target.value })}
+                  onChange={(e) => {
+                    const val = Math.max(1, parseInt(e.target.value) || 1)
+                    setFormData({ ...formData, camere: val.toString() })
+                  }}
                 />
               </div>
               <div className="space-y-2">
@@ -301,21 +340,22 @@ export function ProprietaDialog({ open, onOpenChange }: ProprietaDialogProps) {
                 <Input
                   id="bagni"
                   type="number"
-                  min="0"
+                  min="1"
                   placeholder="1"
                   value={formData.bagni}
-                  onChange={(e) => setFormData({ ...formData, bagni: e.target.value })}
+                  onChange={(e) => {
+                    const val = Math.max(1, parseInt(e.target.value) || 1)
+                    setFormData({ ...formData, bagni: val.toString() })
+                  }}
                 />
               </div>
             </div>
 
             {/* Info locali automatici */}
-            {(formData.camere || formData.bagni) && (
-              <p className="text-xs text-muted-foreground">
-                Verranno creati automaticamente {formData.camere || 0} camera/e e {formData.bagni || 0} bagno/i.
-                Potrai modificarli successivamente dalla sezione Locali.
-              </p>
-            )}
+            <p className="text-xs text-muted-foreground">
+              Verranno creati automaticamente {formData.camere || 1} camera/e e {formData.bagni || 1} bagno/i.
+              Potrai modificarli successivamente dalla sezione Locali.
+            </p>
           </div>
 
           <DialogFooter>

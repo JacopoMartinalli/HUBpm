@@ -157,6 +157,11 @@ export function useUpdateFaseProprieta() {
   })
 }
 
+// Alias: Lista proprietà per contatto (lead o cliente)
+export function useProprietaByContatto(contattoId: string | undefined) {
+  return useProprietaList(contattoId)
+}
+
 // Conta proprietà per fase
 export function useProprietaCountByFase() {
   return useQuery({
