@@ -186,14 +186,6 @@ export default function PropertyManagerPage() {
                 <Building2 className="h-4 w-4 mr-2" />
                 Azienda
               </TabsTrigger>
-              <TabsTrigger value="contatti">
-                <Phone className="h-4 w-4 mr-2" />
-                Contatti
-              </TabsTrigger>
-              <TabsTrigger value="referente">
-                <User className="h-4 w-4 mr-2" />
-                Referente
-              </TabsTrigger>
               <TabsTrigger value="banca">
                 <CreditCard className="h-4 w-4 mr-2" />
                 Dati Bancari
@@ -204,51 +196,25 @@ export default function PropertyManagerPage() {
               </TabsTrigger>
             </TabsList>
 
-            {/* Tab Azienda */}
+            {/* Tab Azienda - unificato con Contatti e Referente */}
             <TabsContent value="azienda">
-              <div className="grid gap-4 md:grid-cols-2">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Dati Societari</CardTitle>
-                    <CardDescription>Informazioni legali dell&apos;azienda</CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <FormField
-                      control={form.control}
-                      name="ragione_sociale"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Ragione Sociale *</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Es. Mario Rossi Property Management S.r.l." {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="nome_commerciale"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Nome Commerciale</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Es. MR Property" {...field} value={field.value || ''} />
-                          </FormControl>
-                          <FormDescription>Nome utilizzato per il marketing</FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-6">
+                {/* Riga 1: Dati Societari + Sede Legale */}
+                <div className="grid gap-4 md:grid-cols-2">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Dati Societari</CardTitle>
+                      <CardDescription>Informazioni legali dell&apos;azienda</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
                       <FormField
                         control={form.control}
-                        name="partita_iva"
+                        name="ragione_sociale"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Partita IVA</FormLabel>
+                            <FormLabel>Ragione Sociale *</FormLabel>
                             <FormControl>
-                              <Input placeholder="12345678901" {...field} value={field.value || ''} />
+                              <Input placeholder="Es. Mario Rossi Property Management S.r.l." {...field} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -256,156 +222,184 @@ export default function PropertyManagerPage() {
                       />
                       <FormField
                         control={form.control}
-                        name="codice_fiscale"
+                        name="nome_commerciale"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Codice Fiscale</FormLabel>
+                            <FormLabel>Nome Commerciale</FormLabel>
                             <FormControl>
-                              <Input placeholder="RSSMRA..." {...field} value={field.value || ''} />
+                              <Input placeholder="Es. MR Property" {...field} value={field.value || ''} />
                             </FormControl>
+                            <FormDescription>Nome utilizzato per il marketing</FormDescription>
                             <FormMessage />
                           </FormItem>
                         )}
                       />
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <FormField
-                        control={form.control}
-                        name="codice_sdi"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Codice SDI</FormLabel>
-                            <FormControl>
-                              <Input placeholder="XXXXXXX" {...field} value={field.value || ''} />
-                            </FormControl>
-                            <FormDescription>Per fatturazione elettronica</FormDescription>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name="pec"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>PEC</FormLabel>
-                            <FormControl>
-                              <Input placeholder="azienda@pec.it" {...field} value={field.value || ''} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-                  </CardContent>
-                </Card>
+                      <div className="grid grid-cols-2 gap-4">
+                        <FormField
+                          control={form.control}
+                          name="partita_iva"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Partita IVA</FormLabel>
+                              <FormControl>
+                                <Input placeholder="12345678901" {...field} value={field.value || ''} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="codice_fiscale"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Codice Fiscale</FormLabel>
+                              <FormControl>
+                                <Input placeholder="RSSMRA..." {...field} value={field.value || ''} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <FormField
+                          control={form.control}
+                          name="codice_sdi"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Codice SDI</FormLabel>
+                              <FormControl>
+                                <Input placeholder="XXXXXXX" {...field} value={field.value || ''} />
+                              </FormControl>
+                              <FormDescription>Per fatturazione elettronica</FormDescription>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="pec"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>PEC</FormLabel>
+                              <FormControl>
+                                <Input placeholder="azienda@pec.it" {...field} value={field.value || ''} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                    </CardContent>
+                  </Card>
 
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Sede Legale</CardTitle>
-                    <CardDescription>Indirizzo della sede operativa</CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <FormField
-                      control={form.control}
-                      name="indirizzo"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Indirizzo</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Via Roma 1" {...field} value={field.value || ''} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <div className="grid grid-cols-3 gap-4">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Sede Legale</CardTitle>
+                      <CardDescription>Indirizzo della sede operativa</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
                       <FormField
                         control={form.control}
-                        name="citta"
+                        name="indirizzo"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Città</FormLabel>
+                            <FormLabel>Indirizzo</FormLabel>
                             <FormControl>
-                              <Input placeholder="Roma" {...field} value={field.value || ''} />
+                              <Input placeholder="Via Roma 1" {...field} value={field.value || ''} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
                         )}
                       />
+                      <div className="grid grid-cols-3 gap-4">
+                        <FormField
+                          control={form.control}
+                          name="citta"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Città</FormLabel>
+                              <FormControl>
+                                <Input placeholder="Roma" {...field} value={field.value || ''} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="cap"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>CAP</FormLabel>
+                              <FormControl>
+                                <Input placeholder="00100" {...field} value={field.value || ''} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="provincia"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Provincia</FormLabel>
+                              <FormControl>
+                                <Input placeholder="RM" maxLength={2} {...field} value={field.value || ''} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
                       <FormField
                         control={form.control}
-                        name="cap"
+                        name="note"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>CAP</FormLabel>
+                            <FormLabel>Note</FormLabel>
                             <FormControl>
-                              <Input placeholder="00100" {...field} value={field.value || ''} />
+                              <Textarea
+                                placeholder="Note aggiuntive..."
+                                className="resize-none"
+                                {...field}
+                                value={field.value || ''}
+                              />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
                         )}
                       />
-                      <FormField
-                        control={form.control}
-                        name="provincia"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Provincia</FormLabel>
-                            <FormControl>
-                              <Input placeholder="RM" maxLength={2} {...field} value={field.value || ''} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-                    <FormField
-                      control={form.control}
-                      name="note"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Note</FormLabel>
-                          <FormControl>
-                            <Textarea
-                              placeholder="Note aggiuntive..."
-                              className="resize-none"
-                              {...field}
-                              value={field.value || ''}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </CardContent>
-                </Card>
-              </div>
-            </TabsContent>
+                    </CardContent>
+                  </Card>
+                </div>
 
-            {/* Tab Contatti */}
-            <TabsContent value="contatti">
-              <div className="grid gap-4 md:grid-cols-2">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Contatti Aziendali</CardTitle>
-                    <CardDescription>Email e telefono dell&apos;azienda</CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <FormField
-                      control={form.control}
-                      name="email"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Email</FormLabel>
-                          <FormControl>
-                            <Input type="email" placeholder="info@azienda.it" {...field} value={field.value || ''} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <div className="grid grid-cols-2 gap-4">
+                {/* Riga 2: Contatti + Social + Referente */}
+                <div className="grid gap-4 md:grid-cols-3">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Phone className="h-4 w-4" />
+                        Contatti
+                      </CardTitle>
+                      <CardDescription>Email e telefono</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <FormField
+                        control={form.control}
+                        name="email"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Email</FormLabel>
+                            <FormControl>
+                              <Input type="email" placeholder="info@azienda.it" {...field} value={field.value || ''} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
                       <FormField
                         control={form.control}
                         name="telefono"
@@ -432,164 +426,165 @@ export default function PropertyManagerPage() {
                           </FormItem>
                         )}
                       />
-                    </div>
-                    <FormField
-                      control={form.control}
-                      name="sito_web"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Sito Web</FormLabel>
-                          <FormControl>
-                            <div className="flex items-center gap-2">
-                              <Globe className="h-4 w-4 text-muted-foreground" />
-                              <Input placeholder="https://www.azienda.it" {...field} value={field.value || ''} />
-                            </div>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </CardContent>
-                </Card>
+                      <FormField
+                        control={form.control}
+                        name="sito_web"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Sito Web</FormLabel>
+                            <FormControl>
+                              <div className="flex items-center gap-2">
+                                <Globe className="h-4 w-4 text-muted-foreground" />
+                                <Input placeholder="https://www.azienda.it" {...field} value={field.value || ''} />
+                              </div>
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </CardContent>
+                  </Card>
 
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Social Media</CardTitle>
-                    <CardDescription>Profili social dell&apos;azienda</CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <FormField
-                      control={form.control}
-                      name="instagram"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Instagram</FormLabel>
-                          <FormControl>
-                            <div className="flex items-center gap-2">
-                              <Instagram className="h-4 w-4 text-muted-foreground" />
-                              <Input placeholder="@azienda" {...field} value={field.value || ''} />
-                            </div>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="facebook"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Facebook</FormLabel>
-                          <FormControl>
-                            <div className="flex items-center gap-2">
-                              <Facebook className="h-4 w-4 text-muted-foreground" />
-                              <Input placeholder="facebook.com/azienda" {...field} value={field.value || ''} />
-                            </div>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="linkedin"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>LinkedIn</FormLabel>
-                          <FormControl>
-                            <div className="flex items-center gap-2">
-                              <Linkedin className="h-4 w-4 text-muted-foreground" />
-                              <Input placeholder="linkedin.com/company/azienda" {...field} value={field.value || ''} />
-                            </div>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </CardContent>
-                </Card>
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Instagram className="h-4 w-4" />
+                        Social Media
+                      </CardTitle>
+                      <CardDescription>Profili social</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <FormField
+                        control={form.control}
+                        name="instagram"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Instagram</FormLabel>
+                            <FormControl>
+                              <div className="flex items-center gap-2">
+                                <Instagram className="h-4 w-4 text-muted-foreground" />
+                                <Input placeholder="@azienda" {...field} value={field.value || ''} />
+                              </div>
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="facebook"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Facebook</FormLabel>
+                            <FormControl>
+                              <div className="flex items-center gap-2">
+                                <Facebook className="h-4 w-4 text-muted-foreground" />
+                                <Input placeholder="facebook.com/azienda" {...field} value={field.value || ''} />
+                              </div>
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="linkedin"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>LinkedIn</FormLabel>
+                            <FormControl>
+                              <div className="flex items-center gap-2">
+                                <Linkedin className="h-4 w-4 text-muted-foreground" />
+                                <Input placeholder="linkedin.com/company/azienda" {...field} value={field.value || ''} />
+                              </div>
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <User className="h-4 w-4" />
+                        Referente
+                      </CardTitle>
+                      <CardDescription>Persona di riferimento</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <FormField
+                          control={form.control}
+                          name="referente_nome"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Nome</FormLabel>
+                              <FormControl>
+                                <Input placeholder="Mario" {...field} value={field.value || ''} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="referente_cognome"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Cognome</FormLabel>
+                              <FormControl>
+                                <Input placeholder="Rossi" {...field} value={field.value || ''} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                      <FormField
+                        control={form.control}
+                        name="referente_ruolo"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Ruolo</FormLabel>
+                            <FormControl>
+                              <Input placeholder="CEO / Property Manager" {...field} value={field.value || ''} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="referente_email"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Email</FormLabel>
+                            <FormControl>
+                              <Input type="email" placeholder="mario@azienda.it" {...field} value={field.value || ''} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="referente_telefono"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Telefono</FormLabel>
+                            <FormControl>
+                              <Input placeholder="+39 333 1234567" {...field} value={field.value || ''} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </CardContent>
+                  </Card>
+                </div>
               </div>
-            </TabsContent>
-
-            {/* Tab Referente */}
-            <TabsContent value="referente">
-              <Card className="max-w-2xl">
-                <CardHeader>
-                  <CardTitle>Referente Aziendale</CardTitle>
-                  <CardDescription>Persona di riferimento per i clienti</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="referente_nome"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Nome</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Mario" {...field} value={field.value || ''} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="referente_cognome"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Cognome</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Rossi" {...field} value={field.value || ''} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                  <FormField
-                    control={form.control}
-                    name="referente_ruolo"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Ruolo</FormLabel>
-                        <FormControl>
-                          <Input placeholder="CEO / Property Manager" {...field} value={field.value || ''} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <div className="grid grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="referente_email"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Email</FormLabel>
-                          <FormControl>
-                            <Input type="email" placeholder="mario@azienda.it" {...field} value={field.value || ''} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="referente_telefono"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Telefono</FormLabel>
-                          <FormControl>
-                            <Input placeholder="+39 333 1234567" {...field} value={field.value || ''} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                </CardContent>
-              </Card>
             </TabsContent>
 
             {/* Tab Dati Bancari */}
