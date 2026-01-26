@@ -469,14 +469,14 @@ export default function LeadDetailPage() {
               {proprieta.map((prop) => (
                 <Link
                   key={prop.id}
-                  href={`/proprieta/${prop.id}`}
+                  href={`/proprieta-lead/${prop.id}`}
                   className="block"
                 >
                   <Card className="hover:bg-accent/50 transition-colors cursor-pointer h-full">
                     <CardContent className="pt-6">
                       <div className="flex items-start justify-between gap-2 mb-3">
                         <h3 className="font-semibold truncate">{prop.nome}</h3>
-                        <FaseBadge fase={prop.fase} tipo="proprieta" />
+                        <FaseBadge fase={prop.fase} tipo="proprieta_lead" />
                       </div>
                       <div className="space-y-2 text-sm">
                         <p className="text-muted-foreground flex items-center gap-1">
