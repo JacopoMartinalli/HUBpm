@@ -4,6 +4,9 @@ export * from './use-contatti'
 // Proprietà
 export * from './use-proprieta'
 
+// Proprietà Lead (proprietà in valutazione)
+export * from './use-proprieta-lead'
+
 // Locali
 export * from './use-locali'
 

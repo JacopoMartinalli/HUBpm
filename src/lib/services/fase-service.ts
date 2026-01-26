@@ -152,27 +152,36 @@ async function verificaBloccoSpeciale(
 
     case 'proprieta_lead': {
       // Verifica se esiste almeno 1 proprieta_lead per questo lead
-      const { data: proprieta } = await supabase
+      const { data: proprieta, error } = await supabase
         .from('proprieta_lead')
         .select('id')
         .eq('tenant_id', DEFAULT_TENANT_ID)
         .eq('contatto_id', entityId)
-        .eq('esito', 'in_corso')
         .limit(1)
+
+      if (error) {
+        console.error('Errore verifica proprieta_lead:', error)
+        return { superato: false }
+      }
 
       return { superato: (proprieta?.length || 0) > 0 }
     }
 
     case 'proprieta_valutata': {
       // Verifica se almeno 1 proprieta è in fase PL3 (Valutata)
-      const { data: proprieta } = await supabase
+      const { data: proprieta, error } = await supabase
         .from('proprieta_lead')
-        .select('fase')
+        .select('id, fase')
         .eq('tenant_id', DEFAULT_TENANT_ID)
         .eq('contatto_id', entityId)
-        .eq('esito', 'in_corso')
         .eq('fase', 'PL3')
+        .neq('esito', 'scartato')  // Esclude solo quelle esplicitamente scartate (NULL passa)
         .limit(1)
+
+      if (error) {
+        console.error('Errore verifica proprieta_valutata:', error)
+        return { superato: false }
+      }
 
       return { superato: (proprieta?.length || 0) > 0 }
     }

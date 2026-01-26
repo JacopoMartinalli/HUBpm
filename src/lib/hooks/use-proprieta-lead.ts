@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase, DEFAULT_TENANT_ID } from '@/lib/supabase'
 import { generaTaskPerFase } from '@/lib/services/fase-service'
-import type { ProprietaLead, ProprietaLeadInsert, ProprietaLeadUpdate, FaseProprietaLead } from '@/types/database'
+import type { ProprietaLead, ProprietaLeadInsert, ProprietaLeadUpdate, FaseProprietaLead, EsitoProprietaLead, TipologiaProprieta } from '@/types/database'
 import { taskKeys } from './use-task'
 
 export const proprietaLeadKeys = {
@@ -59,15 +59,41 @@ export function useProprietaLead(id: string | undefined) {
   })
 }
 
+// Tipo per creazione proprietà lead (campi obbligatori + opzionali)
+type CreateProprietaLeadInput = {
+  contatto_id: string
+  nome: string
+  indirizzo: string
+  citta: string
+  cap?: string | null
+  provincia?: string | null
+  tipologia?: TipologiaProprieta | null
+  fase?: FaseProprietaLead
+  esito?: EsitoProprietaLead | null
+  motivo_scartato?: string | null
+  data_sopralluogo?: string | null
+  revenue_stimato_annuo?: number | null
+  investimento_richiesto?: number | null
+  note_sopralluogo?: string | null
+  commissione_proposta?: number | null
+  servizi_proposti?: string | null
+  data_proposta?: string | null
+  note?: string | null
+}
+
 // Crea proprietà lead
 export function useCreateProprietaLead() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async (proprieta: Omit<ProprietaLeadInsert, 'tenant_id'>) => {
+    mutationFn: async (proprieta: CreateProprietaLeadInput) => {
       const { data, error } = await supabase
         .from('proprieta_lead')
-        .insert({ ...proprieta, tenant_id: DEFAULT_TENANT_ID })
+        .insert({
+          ...proprieta,
+          tenant_id: DEFAULT_TENANT_ID,
+          fase: proprieta.fase || 'PL0',
+        })
         .select()
         .single()
 

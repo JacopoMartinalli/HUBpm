@@ -25,7 +25,7 @@ import {
   useConvertLeadToCliente,
   useMarkLeadAsLost,
   useDeleteContatto,
-  useProprietaByContatto,
+  useProprietaLeadList,
   useCambioFase,
   useTaskCountPerFase,
   useGeneraTaskPerFase,
@@ -68,7 +68,7 @@ export default function LeadDetailPage() {
   const [notePerso, setNotePerso] = useState('')
 
   const { data: lead, isLoading } = useContatto(id)
-  const { data: proprieta } = useProprietaByContatto(id)
+  const { data: proprieta } = useProprietaLeadList(id)
   const { data: taskCounts } = useTaskCountPerFase('lead', id)
   const cambioFase = useCambioFase()
   const convertToCliente = useConvertLeadToCliente()
@@ -487,9 +487,8 @@ export default function LeadDetailPage() {
                           {prop.indirizzo}, {prop.citta}
                         </p>
                         <div className="flex items-center gap-4 text-xs text-muted-foreground pt-2 border-t">
-                          <span>{prop.camere || 0} camere</span>
-                          <span>{prop.bagni || 0} bagni</span>
-                          <span>{prop.max_ospiti || 0} ospiti</span>
+                          <span className="capitalize">{prop.tipologia || 'N/D'}</span>
+                          <span>Fase: {prop.fase}</span>
                         </div>
                       </div>
                     </CardContent>
