@@ -28,11 +28,12 @@ import {
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
 import { TIPOLOGIE_PROPRIETA, PROVINCE_ZONA } from '@/constants'
-import type { TipologiaProprieta, FaseProprietaLead } from '@/types/database'
-import type { Contatto, ProprietaLead } from '@/types/database'
+import type { TipologiaProprieta, FaseProprieta, TipoLocale } from '@/types/database'
+import type { Contatto, Proprieta } from '@/types/database'
 import {
   useUpdateContatto,
-  useCreateProprietaLead,
+  useCreateProprieta,
+  useCreateLocale,
   useCambioFase,
 } from '@/lib/hooks'
 
@@ -53,7 +54,7 @@ interface CreaProprietaWizardProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   lead: Contatto
-  proprietaEsistenti: ProprietaLead[]
+  proprietaEsistenti: Proprieta[]
   onComplete: () => void
 }
 
@@ -71,7 +72,8 @@ export function CreaProprietaWizard({
   const [currentProprietaIndex, setCurrentProprietaIndex] = useState(0)
 
   const updateContatto = useUpdateContatto()
-  const createProprietaLead = useCreateProprietaLead()
+  const createProprieta = useCreateProprieta()
+  const createLocale = useCreateLocale()
   const cambioFase = useCambioFase()
 
   // Calcola quante proprietà creare
@@ -176,11 +178,9 @@ export function CreaProprietaWizard({
         numero_proprieta: numeroProprieta,
       })
 
-      // 2. Crea le proprietà lead con i dati inseriti
+      // 2. Crea le proprietà con i dati inseriti
       for (const form of proprietaForms) {
-        // Nota: camere, bagni, posti_letto verranno aggiunti quando la proprietà
-        // viene confermata e diventa una "proprieta" vera e propria
-        await createProprietaLead.mutateAsync({
+        const nuovaProprieta = await createProprieta.mutateAsync({
           nome: form.nome,
           indirizzo: form.indirizzo || 'Da definire',
           citta: form.citta || 'Da definire',
@@ -188,13 +188,69 @@ export function CreaProprietaWizard({
           provincia: form.provincia || null,
           tipologia: form.tipologia,
           contatto_id: lead.id,
-          fase: 'PL0' as FaseProprietaLead,
-          esito: 'in_corso',
-          // Salva info extra nelle note per ora
-          note: form.camere || form.bagni || form.posti_letto
-            ? `Camere: ${form.camere}, Bagni: ${form.bagni}, Posti letto: ${form.posti_letto}`
-            : null,
+          commissione_percentuale: 0,
+          fase: 'P0' as FaseProprieta,
+          proprieta_lead_id: null,
+          max_ospiti: form.posti_letto,
+          camere: form.camere,
+          bagni: form.bagni,
+          mq: null,
+          foglio: null,
+          mappale: null,
+          subalterno: null,
+          categoria_catastale: null,
+          rendita_catastale: null,
+          cir: null,
+          cin: null,
+          scia_protocollo: null,
+          scia_data: null,
+          alloggiati_web_attivo: false,
+          ross1000_attivo: false,
+          codice_portone: null,
+          codice_appartamento: null,
+          istruzioni_accesso: null,
+          wifi_ssid: null,
+          wifi_password: null,
+          checkin_orario: '15:00',
+          checkout_orario: '10:00',
+          costo_pulizie: null,
+          tassa_soggiorno_persona: null,
+          regole_casa: null,
+          note: null,
+          piano: null,
+          channel_manager: null,
+          id_channel_manager: null,
+          smaltimento_rifiuti: null,
+          parcheggio: null,
         })
+
+        // Crea i locali (camere + bagni)
+        if (nuovaProprieta?.id) {
+          // Crea le camere
+          for (let i = 1; i <= form.camere; i++) {
+            await createLocale.mutateAsync({
+              proprieta_id: nuovaProprieta.id,
+              tipo: 'camera_matrimoniale' as TipoLocale,
+              nome: `Camera ${i}`,
+              mq: null,
+              posti_letto: Math.ceil(form.posti_letto / form.camere),
+              dotazioni: null,
+              note: null,
+            })
+          }
+          // Crea i bagni
+          for (let i = 1; i <= form.bagni; i++) {
+            await createLocale.mutateAsync({
+              proprieta_id: nuovaProprieta.id,
+              tipo: 'bagno' as TipoLocale,
+              nome: `Bagno ${i}`,
+              mq: null,
+              posti_letto: null,
+              dotazioni: null,
+              note: null,
+            })
+          }
+        }
       }
 
       // 3. Avanza la fase del lead a L1
