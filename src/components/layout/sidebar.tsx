@@ -17,6 +17,7 @@ import {
   UserCircle,
   Target,
   Briefcase,
+  FileText,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -87,6 +88,11 @@ const navigation: NavSection[] = [
         title: 'Catalogo Servizi',
         href: '/servizi',
         icon: Package,
+      },
+      {
+        title: 'Template Documenti',
+        href: '/templates',
+        icon: FileText,
       },
     ],
   },

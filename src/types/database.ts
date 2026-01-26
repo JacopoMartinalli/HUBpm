@@ -908,3 +908,148 @@ export interface PropertyManager {
 
 export type PropertyManagerInsert = Omit<PropertyManager, 'id' | 'created_at' | 'updated_at'>
 export type PropertyManagerUpdate = Partial<PropertyManagerInsert>
+
+// ============================================
+// DOCUMENT TEMPLATES (Sistema Template Dinamici)
+// ============================================
+
+export type CategoriaTemplate = 'preventivo' | 'proposta' | 'contratto' | 'privacy' | 'mandato' | 'lettera' | 'report'
+export type FormatoPagina = 'A4' | 'A5' | 'Letter'
+export type OrientamentoPagina = 'portrait' | 'landscape'
+export type StatoDocumentoGenerato = 'generato' | 'inviato' | 'visto' | 'firmato' | 'archiviato' | 'scaduto' | 'annullato'
+export type MetodoFirma = 'manuale' | 'digitale' | 'otp'
+
+export interface MarginiPagina {
+  top: number
+  right: number
+  bottom: number
+  left: number
+}
+
+export interface DocumentTemplate {
+  id: string
+  tenant_id: string
+  // Identificazione
+  nome: string
+  descrizione: string | null
+  categoria: CategoriaTemplate
+  // Contenuto TipTap
+  contenuto: Record<string, unknown> // JSON TipTap
+  contenuto_html: string | null
+  // Configurazione
+  variabili_utilizzate: string[]
+  formato_pagina: FormatoPagina
+  orientamento: OrientamentoPagina
+  margini: MarginiPagina
+  // Stili
+  stili_custom: Record<string, unknown>
+  // Stato
+  attivo: boolean
+  predefinito: boolean
+  versione: number
+  // Metadata
+  created_at: string
+  updated_at: string
+  created_by: string | null
+}
+
+export interface DocumentTemplateInsert {
+  tenant_id: string
+  nome: string
+  descrizione?: string | null
+  categoria: CategoriaTemplate
+  contenuto?: Record<string, unknown>
+  contenuto_html?: string | null
+  variabili_utilizzate?: string[]
+  formato_pagina?: FormatoPagina
+  orientamento?: OrientamentoPagina
+  margini?: MarginiPagina
+  stili_custom?: Record<string, unknown>
+  attivo?: boolean
+  predefinito?: boolean
+  versione?: number
+  created_by?: string | null
+}
+
+export type DocumentTemplateUpdate = Partial<Omit<DocumentTemplateInsert, 'tenant_id'>>
+
+// ============================================
+// DOCUMENTI GENERATI (PDF + Tracking Firma)
+// ============================================
+
+export interface DocumentoGenerato {
+  id: string
+  tenant_id: string
+  // Template
+  template_id: string | null
+  template_nome: string | null
+  template_versione: number | null
+  // Riferimenti
+  contatto_id: string | null
+  proprieta_id: string | null
+  proposta_id: string | null
+  // Dati documento
+  numero: string | null
+  titolo: string
+  categoria: CategoriaTemplate
+  // File
+  file_url: string | null
+  file_nome: string | null
+  file_size: number | null
+  // Snapshot dati
+  dati_snapshot: Record<string, unknown>
+  // Stato e tracking
+  stato: StatoDocumentoGenerato
+  data_generazione: string
+  data_invio: string | null
+  data_visualizzazione: string | null
+  data_firma: string | null
+  data_scadenza: string | null
+  // Documento firmato
+  file_firmato_url: string | null
+  file_firmato_nome: string | null
+  firmato_da: string | null
+  metodo_firma: MetodoFirma | null
+  // Note
+  note: string | null
+  note_interne: string | null
+  // Metadata
+  created_at: string
+  updated_at: string
+  created_by: string | null
+  // Relazioni
+  template?: DocumentTemplate
+  contatto?: Contatto
+  proprieta?: Proprieta
+  proposta?: PropostaCommerciale
+}
+
+export interface DocumentoGeneratoInsert {
+  tenant_id: string
+  template_id?: string | null
+  template_nome?: string | null
+  template_versione?: number | null
+  contatto_id?: string | null
+  proprieta_id?: string | null
+  proposta_id?: string | null
+  titolo: string
+  categoria: CategoriaTemplate
+  file_url?: string | null
+  file_nome?: string | null
+  file_size?: number | null
+  dati_snapshot?: Record<string, unknown>
+  stato?: StatoDocumentoGenerato
+  data_scadenza?: string | null
+  data_invio?: string | null
+  data_visualizzazione?: string | null
+  data_firma?: string | null
+  file_firmato_url?: string | null
+  file_firmato_nome?: string | null
+  firmato_da?: string | null
+  metodo_firma?: MetodoFirma | null
+  note?: string | null
+  note_interne?: string | null
+  created_by?: string | null
+}
+
+export type DocumentoGeneratoUpdate = Partial<Omit<DocumentoGeneratoInsert, 'tenant_id'>>

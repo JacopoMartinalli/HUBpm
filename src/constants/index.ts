@@ -282,3 +282,213 @@ export function getEsitoLabel(esiti: readonly { id: string; label: string }[], i
 export function getEsitoColor(esiti: readonly { id: string; color: string }[], id: string): string {
   return esiti.find(e => e.id === id)?.color || 'bg-gray-100 text-gray-700'
 }
+
+// ============================================
+// DOCUMENT TEMPLATES
+// ============================================
+
+export const CATEGORIE_TEMPLATE = [
+  { id: 'preventivo', label: 'Preventivo', icon: '💰', description: 'Preventivo servizi con prezzi' },
+  { id: 'proposta', label: 'Proposta Commerciale', icon: '📋', description: 'Proposta commerciale completa' },
+  { id: 'contratto', label: 'Contratto', icon: '📝', description: 'Contratto di gestione' },
+  { id: 'privacy', label: 'Privacy', icon: '🔒', description: 'Informativa privacy GDPR' },
+  { id: 'mandato', label: 'Mandato', icon: '🤝', description: 'Mandato di gestione' },
+  { id: 'lettera', label: 'Lettera', icon: '✉️', description: 'Lettera generica' },
+  { id: 'report', label: 'Report', icon: '📊', description: 'Report periodico' },
+] as const
+
+export const STATI_DOCUMENTO_GENERATO = [
+  { id: 'generato', label: 'Generato', color: 'bg-gray-100 text-gray-700', icon: '📄' },
+  { id: 'inviato', label: 'Inviato', color: 'bg-blue-100 text-blue-700', icon: '📤' },
+  { id: 'visto', label: 'Visualizzato', color: 'bg-indigo-100 text-indigo-700', icon: '👁️' },
+  { id: 'firmato', label: 'Firmato', color: 'bg-green-100 text-green-700', icon: '✅' },
+  { id: 'archiviato', label: 'Archiviato', color: 'bg-purple-100 text-purple-700', icon: '📁' },
+  { id: 'scaduto', label: 'Scaduto', color: 'bg-orange-100 text-orange-700', icon: '⏰' },
+  { id: 'annullato', label: 'Annullato', color: 'bg-red-100 text-red-700', icon: '❌' },
+] as const
+
+export const METODI_FIRMA = [
+  { id: 'manuale', label: 'Firma Manuale', description: 'Documento stampato e firmato a mano' },
+  { id: 'digitale', label: 'Firma Digitale', description: 'Firma elettronica qualificata' },
+  { id: 'otp', label: 'Firma OTP', description: 'Firma con codice OTP' },
+] as const
+
+export const FORMATI_PAGINA = [
+  { id: 'A4', label: 'A4', width: 210, height: 297, dimensions: '210 x 297 mm' },
+  { id: 'A5', label: 'A5', width: 148, height: 210, dimensions: '148 x 210 mm' },
+  { id: 'Letter', label: 'Letter', width: 216, height: 279, dimensions: '8.5 x 11 in' },
+] as const
+
+export const ORIENTAMENTI_PAGINA = [
+  { id: 'portrait', label: 'Verticale', icon: '📄' },
+  { id: 'landscape', label: 'Orizzontale', icon: '📃' },
+] as const
+
+// ============================================
+// BLOCCHI TEMPLATE EDITOR
+// ============================================
+
+export const BLOCCHI_TEMPLATE = [
+  // Intestazioni
+  {
+    id: 'header',
+    categoria: 'Intestazioni',
+    icon: '🏢',
+    label: 'Intestazione Azienda',
+    description: 'Logo, nome azienda e contatti',
+    configurabile: ['showLogo', 'showAddress', 'showContacts', 'showPiva']
+  },
+  // Dati Automatici
+  {
+    id: 'cliente',
+    categoria: 'Dati Automatici',
+    icon: '👤',
+    label: 'Dati Cliente',
+    description: 'Anagrafica completa del cliente',
+    configurabile: ['showAddress', 'showContacts', 'showCf', 'showPiva']
+  },
+  {
+    id: 'proprieta',
+    categoria: 'Dati Automatici',
+    icon: '🏠',
+    label: 'Dati Proprietà',
+    description: 'Informazioni sulla proprietà',
+    configurabile: ['showAddress', 'showDetails', 'showCodes']
+  },
+  // Contenuti
+  {
+    id: 'serviziTabella',
+    categoria: 'Contenuti',
+    icon: '📊',
+    label: 'Tabella Servizi',
+    description: 'Lista servizi con prezzi e totali',
+    configurabile: ['showDescription', 'showQuantity']
+  },
+  {
+    id: 'totali',
+    categoria: 'Contenuti',
+    icon: '💰',
+    label: 'Riepilogo Totali',
+    description: 'Subtotale, IVA e totale',
+    configurabile: ['showSubtotale', 'showIva', 'showAcconto']
+  },
+  // Chiusura
+  {
+    id: 'validita',
+    categoria: 'Chiusura',
+    icon: '📅',
+    label: 'Validità',
+    description: 'Scadenza documento',
+    configurabile: ['days']
+  },
+  {
+    id: 'termini',
+    categoria: 'Chiusura',
+    icon: '📋',
+    label: 'Termini e Condizioni',
+    description: 'Clausole contrattuali standard',
+    configurabile: ['customTerms']
+  },
+  {
+    id: 'firme',
+    categoria: 'Chiusura',
+    icon: '✍️',
+    label: 'Blocco Firme',
+    description: 'Spazio per firme fornitore e cliente',
+    configurabile: ['showDate', 'leftLabel', 'rightLabel']
+  },
+  // Utilità
+  {
+    id: 'note',
+    categoria: 'Utilità',
+    icon: '⚠️',
+    label: 'Box Avviso',
+    description: 'Riquadro evidenziato per note importanti',
+    configurabile: ['style', 'icon']
+  },
+  {
+    id: 'separatore',
+    categoria: 'Utilità',
+    icon: '➖',
+    label: 'Separatore',
+    description: 'Linea di separazione tra sezioni',
+    configurabile: ['style']
+  },
+] as const
+
+// ============================================
+// VARIABILI TEMPLATE (per menzioni @)
+// ============================================
+
+export const VARIABILI_TEMPLATE = [
+  // Date
+  { id: 'oggi', label: 'Data di oggi', categoria: 'Date', esempio: '26 gennaio 2026' },
+  { id: 'oggi_breve', label: 'Data di oggi (breve)', categoria: 'Date', esempio: '26/01/2026' },
+  { id: 'anno', label: 'Anno corrente', categoria: 'Date', esempio: '2026' },
+
+  // Documento
+  { id: 'documento.numero', label: 'Numero documento', categoria: 'Documento', esempio: 'DOC-2026-001' },
+  { id: 'documento.data', label: 'Data documento', categoria: 'Documento', esempio: '26 gennaio 2026' },
+  { id: 'documento.scadenza', label: 'Scadenza documento', categoria: 'Documento', esempio: '25 febbraio 2026' },
+
+  // Preventivo/Proposta
+  { id: 'proposta.numero', label: 'Numero proposta', categoria: 'Proposta', esempio: 'PROP-2026-001' },
+  { id: 'proposta.data', label: 'Data proposta', categoria: 'Proposta', esempio: '26 gennaio 2026' },
+  { id: 'proposta.totale', label: 'Totale proposta', categoria: 'Proposta', esempio: '€ 1.220,00' },
+  { id: 'proposta.subtotale', label: 'Subtotale', categoria: 'Proposta', esempio: '€ 1.000,00' },
+  { id: 'proposta.sconto', label: 'Sconto applicato', categoria: 'Proposta', esempio: '€ 50,00' },
+
+  // Azienda PM
+  { id: 'azienda.nome', label: 'Nome azienda', categoria: 'Azienda', esempio: 'Property Manager Srl' },
+  { id: 'azienda.indirizzo', label: 'Indirizzo azienda', categoria: 'Azienda', esempio: 'Via Roma 1, 20100 Milano' },
+  { id: 'azienda.email', label: 'Email azienda', categoria: 'Azienda', esempio: 'info@pm.it' },
+  { id: 'azienda.telefono', label: 'Telefono azienda', categoria: 'Azienda', esempio: '+39 02 1234567' },
+  { id: 'azienda.piva', label: 'P.IVA azienda', categoria: 'Azienda', esempio: '12345678901' },
+  { id: 'azienda.pec', label: 'PEC azienda', categoria: 'Azienda', esempio: 'pm@pec.it' },
+
+  // Cliente
+  { id: 'cliente.nome_completo', label: 'Nome cliente', categoria: 'Cliente', esempio: 'Mario Rossi' },
+  { id: 'cliente.nome', label: 'Nome', categoria: 'Cliente', esempio: 'Mario' },
+  { id: 'cliente.cognome', label: 'Cognome', categoria: 'Cliente', esempio: 'Rossi' },
+  { id: 'cliente.email', label: 'Email cliente', categoria: 'Cliente', esempio: 'mario@example.com' },
+  { id: 'cliente.telefono', label: 'Telefono cliente', categoria: 'Cliente', esempio: '+39 333 1234567' },
+  { id: 'cliente.indirizzo', label: 'Indirizzo cliente', categoria: 'Cliente', esempio: 'Via Lago 5, 22017 Menaggio (CO)' },
+  { id: 'cliente.cf', label: 'Codice Fiscale', categoria: 'Cliente', esempio: 'RSSMRA80A01F205X' },
+  { id: 'cliente.piva', label: 'P.IVA cliente', categoria: 'Cliente', esempio: '12345678901' },
+
+  // Proprietà
+  { id: 'proprieta.nome', label: 'Nome proprietà', categoria: 'Proprietà', esempio: 'Villa Belvedere' },
+  { id: 'proprieta.indirizzo', label: 'Indirizzo proprietà', categoria: 'Proprietà', esempio: 'Via Lago 5, 22017 Menaggio (CO)' },
+  { id: 'proprieta.tipologia', label: 'Tipologia', categoria: 'Proprietà', esempio: 'Villa' },
+  { id: 'proprieta.mq', label: 'Metri quadri', categoria: 'Proprietà', esempio: '150' },
+  { id: 'proprieta.camere', label: 'Numero camere', categoria: 'Proprietà', esempio: '3' },
+  { id: 'proprieta.bagni', label: 'Numero bagni', categoria: 'Proprietà', esempio: '2' },
+  { id: 'proprieta.max_ospiti', label: 'Max ospiti', categoria: 'Proprietà', esempio: '6' },
+  { id: 'proprieta.cir', label: 'Codice CIR', categoria: 'Proprietà', esempio: '013157-CNI-00123' },
+  { id: 'proprieta.cin', label: 'Codice CIN', categoria: 'Proprietà', esempio: 'IT013157A1B2C3D4E5' },
+  { id: 'proprieta.commissione', label: 'Commissione %', categoria: 'Proprietà', esempio: '20%' },
+] as const
+
+// Helper per ottenere blocchi per categoria
+export function getBlocchiPerCategoria() {
+  const grouped: Record<string, typeof BLOCCHI_TEMPLATE[number][]> = {}
+  BLOCCHI_TEMPLATE.forEach(blocco => {
+    if (!grouped[blocco.categoria]) {
+      grouped[blocco.categoria] = []
+    }
+    grouped[blocco.categoria].push(blocco)
+  })
+  return grouped
+}
+
+// Helper per ottenere variabili per categoria
+export function getVariabiliPerCategoria() {
+  const grouped: Record<string, typeof VARIABILI_TEMPLATE[number][]> = {}
+  VARIABILI_TEMPLATE.forEach(variabile => {
+    if (!grouped[variabile.categoria]) {
+      grouped[variabile.categoria] = []
+    }
+    grouped[variabile.categoria].push(variabile)
+  })
+  return grouped
+}

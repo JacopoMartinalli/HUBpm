@@ -39,3 +39,20 @@ export * from './use-erogazione'
 
 // Proposte Commerciali
 export * from './use-proposte'
+
+// Document Templates
+export * from './useDocumentTemplates'
+
+// Documenti Generati (PDF generati da template)
+export {
+  useDocumentiGenerati,
+  useDocumentoGenerato,
+  useDocumentiByProposta,
+  useCreateDocumentoGenerato,
+  useUpdateDocumentoGenerato,
+  useUpdateStatoDocumento,
+  useUploadDocumentoFirmato,
+  useDeleteDocumentoGenerato,
+  useDocumentiStats,
+  documentiGeneratiKeys,
+} from './useDocumentiGenerati'
