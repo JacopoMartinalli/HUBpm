@@ -152,7 +152,11 @@ export function TemplateDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-6xl h-[90vh] flex flex-col">
+      <DialogContent
+        className="max-w-6xl h-[90vh] flex flex-col"
+        onPointerDownOutside={(e) => e.preventDefault()}
+        onInteractOutside={(e) => e.preventDefault()}
+      >
         <DialogHeader>
           <DialogTitle>
             {isEditing ? 'Modifica Template' : 'Nuovo Template'}
@@ -341,8 +345,8 @@ export function TemplateDialog({
               {createTemplate.isPending || updateTemplate.isPending
                 ? 'Salvataggio...'
                 : isEditing
-                ? 'Salva Modifiche'
-                : 'Crea Template'}
+                  ? 'Salva Modifiche'
+                  : 'Crea Template'}
             </Button>
           </div>
         </form>

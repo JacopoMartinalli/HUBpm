@@ -96,6 +96,8 @@ export function BlockInsertMenu({ position, onSelect, onClose }: BlockInsertMenu
       ref={menuRef}
       style={menuStyle}
       className="bg-white rounded-xl shadow-2xl border border-gray-200 w-80 overflow-hidden"
+      onMouseDown={(e) => e.stopPropagation()}
+      onClick={(e) => e.stopPropagation()}
     >
       {/* Header */}
       <div className="p-3 border-b bg-gray-50">
@@ -143,9 +145,8 @@ export function BlockInsertMenu({ position, onSelect, onClose }: BlockInsertMenu
                   <button
                     key={block.id}
                     onClick={() => onSelect(block.id)}
-                    className={`w-full px-4 py-2.5 text-left flex items-start gap-3 transition-colors ${
-                      isSelected ? 'bg-blue-50' : 'hover:bg-gray-50'
-                    }`}
+                    className={`w-full px-4 py-2.5 text-left flex items-start gap-3 transition-colors ${isSelected ? 'bg-blue-50' : 'hover:bg-gray-50'
+                      }`}
                   >
                     <span className="text-xl flex-shrink-0 mt-0.5">
                       {block.icon}

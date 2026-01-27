@@ -46,11 +46,14 @@ export function TemplateEditor({
   const [blockMenuPosition, setBlockMenuPosition] = useState({ x: 0, y: 0 })
 
   const editor = useEditor({
+    immediatelyRender: false,
     extensions: [
       StarterKit.configure({
         heading: {
           levels: [1, 2, 3],
         },
+        // Disable built-in underline since we import it separately
+        underline: false,
       }),
       Underline,
       TextAlign.configure({
@@ -119,16 +122,16 @@ export function TemplateEditor({
       {/* Content */}
       <div className="relative">
         <EditorContent editor={editor} />
-      </div>
 
-      {/* Block Insert Menu */}
-      {showBlockMenu && (
-        <BlockInsertMenu
-          position={blockMenuPosition}
-          onSelect={handleInsertBlock}
-          onClose={() => setShowBlockMenu(false)}
-        />
-      )}
+        {/* Block Insert Menu - positioned relative to editor content */}
+        {showBlockMenu && (
+          <BlockInsertMenu
+            position={blockMenuPosition}
+            onSelect={handleInsertBlock}
+            onClose={() => setShowBlockMenu(false)}
+          />
+        )}
+      </div>
     </div>
   )
 }
@@ -324,11 +327,19 @@ function ToolbarButton({
   children,
   className = '',
 }: ToolbarButtonProps) {
+  const handleClick = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    e.preventDefault()
+    onClick()
+  }
+
   return (
     <button
-      onClick={onClick}
+      onClick={handleClick}
+      onMouseDown={(e) => e.stopPropagation()}
       disabled={disabled}
       title={title}
+      type="button"
       className={`
         p-2 rounded transition-colors flex items-center
         ${active ? 'bg-blue-100 text-blue-600' : 'hover:bg-gray-200 text-gray-700'}

@@ -81,10 +81,15 @@ export function VariableInsertMenu({ editor }: VariableInsertMenuProps) {
     <div className="relative">
       <button
         ref={buttonRef}
-        onClick={() => setIsOpen(!isOpen)}
-        className={`p-2 rounded transition-colors flex items-center ${
-          isOpen ? 'bg-purple-100 text-purple-600' : 'hover:bg-gray-200 text-gray-700'
-        }`}
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation()
+          e.preventDefault()
+          setIsOpen(!isOpen)
+        }}
+        onMouseDown={(e) => e.stopPropagation()}
+        className={`p-2 rounded transition-colors flex items-center ${isOpen ? 'bg-purple-100 text-purple-600' : 'hover:bg-gray-200 text-gray-700'
+          }`}
         title="Inserisci variabile"
       >
         <AtSign className="w-4 h-4" />
@@ -95,6 +100,8 @@ export function VariableInsertMenu({ editor }: VariableInsertMenuProps) {
         <div
           ref={menuRef}
           className="absolute top-full left-0 mt-1 bg-white rounded-xl shadow-2xl border border-gray-200 w-80 overflow-hidden z-50"
+          onMouseDown={(e) => e.stopPropagation()}
+          onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
           <div className="p-3 border-b bg-gray-50">

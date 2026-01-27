@@ -36,6 +36,7 @@ import {
 import { CATEGORIE_TEMPLATE } from '@/constants'
 import type { DocumentTemplate, CategoriaTemplate } from '@/types/database'
 import { TemplateDialog } from './components/template-dialog'
+import { TemplatePreviewDialog } from './components/template-preview-dialog'
 
 export default function TemplatesPage() {
   const [selectedCategoria, setSelectedCategoria] = useState<CategoriaTemplate | 'all'>('all')
@@ -43,6 +44,8 @@ export default function TemplatesPage() {
   const [selectedTemplate, setSelectedTemplate] = useState<DocumentTemplate | null>(null)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [templateToDelete, setTemplateToDelete] = useState<{ id: string; nome: string } | null>(null)
+  const [previewDialogOpen, setPreviewDialogOpen] = useState(false)
+  const [templateToPreview, setTemplateToPreview] = useState<DocumentTemplate | null>(null)
 
   // Data
   const { data: templates, isLoading } = useDocumentTemplates(
@@ -63,6 +66,11 @@ export default function TemplatesPage() {
   const handleNew = (categoria?: CategoriaTemplate) => {
     setSelectedTemplate(categoria ? ({ categoria } as DocumentTemplate) : null)
     setDialogOpen(true)
+  }
+
+  const handlePreview = (template: DocumentTemplate) => {
+    setTemplateToPreview(template)
+    setPreviewDialogOpen(true)
   }
 
   const handleToggleAttivo = async (template: DocumentTemplate) => {
@@ -159,9 +167,8 @@ export default function TemplatesPage() {
                 return (
                   <Card
                     key={template.id}
-                    className={`transition-all ${
-                      !template.attivo ? 'opacity-60' : ''
-                    } ${template.predefinito ? 'ring-2 ring-blue-500' : ''}`}
+                    className={`transition-all ${!template.attivo ? 'opacity-60' : ''
+                      } ${template.predefinito ? 'ring-2 ring-blue-500' : ''}`}
                   >
                     <CardHeader className="pb-3">
                       <div className="flex items-start justify-between">
@@ -194,6 +201,10 @@ export default function TemplatesPage() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => handlePreview(template)}>
+                              <Eye className="h-4 w-4 mr-2" />
+                              Anteprima
+                            </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => handleEdit(template)}>
                               <Pencil className="h-4 w-4 mr-2" />
                               Modifica
@@ -327,6 +338,12 @@ export default function TemplatesPage() {
         confirmText="Elimina"
         variant="destructive"
         onConfirm={handleDeleteConfirm}
+      />
+
+      <TemplatePreviewDialog
+        open={previewDialogOpen}
+        onOpenChange={setPreviewDialogOpen}
+        template={templateToPreview}
       />
     </div>
   )
