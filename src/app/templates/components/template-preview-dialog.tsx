@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button'
 import { TemplatePreview } from '@/components/templates/preview'
 import { CATEGORIE_TEMPLATE, FORMATI_PAGINA, ORIENTAMENTI_PAGINA } from '@/constants'
 import type { DocumentTemplate } from '@/types/database'
-import { X, FileText, Printer } from 'lucide-react'
+import { X, FileText } from 'lucide-react'
 
 interface TemplatePreviewDialogProps {
     open: boolean
@@ -38,7 +38,7 @@ export function TemplatePreviewDialog({
                         <div>
                             <DialogTitle className="text-xl flex items-center gap-2">
                                 <FileText className="h-5 w-5 text-blue-500" />
-                                {template.nome}
+                                Anteprima: {template.nome}
                             </DialogTitle>
                             <div className="flex items-center gap-2 mt-2">
                                 <Badge variant="outline">
@@ -51,43 +51,20 @@ export function TemplatePreviewDialog({
                                     <Badge className="bg-blue-500">Predefinito</Badge>
                                 )}
                             </div>
-                            {template.descrizione && (
-                                <p className="text-sm text-muted-foreground mt-2">
-                                    {template.descrizione}
-                                </p>
-                            )}
                         </div>
                     </div>
                 </DialogHeader>
 
-                {/* Info legenda placeholders */}
-                <div className="flex-shrink-0 bg-purple-50 border border-purple-200 rounded-lg p-3 mx-1">
-                    <div className="flex items-center gap-3 text-sm text-purple-700">
-                        <div className="flex items-center gap-1">
-                            <span className="inline-flex items-center px-2 py-0.5 bg-purple-100 border border-dashed border-purple-300 rounded text-xs">
-                                <span className="text-purple-400">@</span>
-                                <span className="font-medium ml-1">Variabile:</span>
-                                <span className="italic ml-1">esempio</span>
-                            </span>
-                            <span>= Dato dinamico</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                            <span className="inline-flex items-center px-1.5 py-0.5 bg-purple-100 text-purple-600 rounded text-xs">
-                                Placeholder
-                            </span>
-                            <span>= Blocco automatico</span>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Preview content */}
-                <div className="flex-1 overflow-y-auto mt-4 border rounded-lg bg-white">
+                {/* PDF-like preview container */}
+                <div className="flex-1 overflow-y-auto bg-gray-100 rounded-lg p-6">
+                    {/* Paper simulation */}
                     <div
-                        className="p-8 min-h-full"
+                        className="bg-white shadow-lg mx-auto"
                         style={{
-                            // Simula le proporzioni della pagina
-                            maxWidth: template.orientamento === 'landscape' ? '100%' : '800px',
-                            margin: '0 auto',
+                            maxWidth: template.orientamento === 'landscape' ? '1000px' : '700px',
+                            minHeight: '900px',
+                            padding: '48px',
+                            fontFamily: 'Georgia, "Times New Roman", serif',
                         }}
                     >
                         <TemplatePreview content={template.contenuto || {}} />
@@ -97,7 +74,7 @@ export function TemplatePreviewDialog({
                 {/* Footer */}
                 <div className="flex-shrink-0 flex justify-between items-center pt-4 border-t mt-4">
                     <div className="text-sm text-muted-foreground">
-                        {template.variabili_utilizzate?.length || 0} variabili • v{template.versione}
+                        Anteprima con dati di esempio • {template.variabili_utilizzate?.length || 0} variabili
                     </div>
                     <div className="flex gap-2">
                         <Button variant="outline" onClick={() => onOpenChange(false)}>
