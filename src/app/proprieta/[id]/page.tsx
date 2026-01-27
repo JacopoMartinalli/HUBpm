@@ -1,13 +1,14 @@
 'use client'
 
 import { useParams, useRouter } from 'next/navigation'
-import { ArrowLeft, Building2, MapPin, Users, Bed, Bath, Square, Wifi, Key, Calendar, Edit, Trash2, Plus, Home, Package, Boxes, FileText } from 'lucide-react'
+import { ArrowLeft, Building2, MapPin, Users, Bed, Bath, Square, Wifi, Key, Calendar, Edit, Trash2, Plus, Home, Package, Boxes, FileText, ShieldCheck, Camera, ClipboardCheck, Check } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Separator } from '@/components/ui/separator'
 import { LoadingSpinner, FaseBadge, ConfirmDialog, PageHeader, DataTable, Column, DocumentiList } from '@/components/shared'
+import { FotoProprietaGallery } from '@/components/shared/foto-proprieta-gallery'
 import { ErogazioneProprietaView } from '@/components/erogazione'
 import { PipelineProprietaCard } from '@/components/proprieta'
 import { ProposteProprietaView } from '@/components/proposte'
@@ -15,7 +16,7 @@ import { useProprieta, useUpdateProprieta, useDeleteProprieta, useLocaliByPropri
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { AlertTriangle } from 'lucide-react'
 import { formatCurrency, formatPercent } from '@/lib/utils'
-import { FASI_PROPRIETA, TIPOLOGIE_PROPRIETA, TIPI_LOCALE, CATEGORIE_ASSET, STATI_ASSET } from '@/constants'
+import { FASI_PROPRIETA, TIPOLOGIE_PROPRIETA, TIPI_LOCALE, CATEGORIE_ASSET, STATI_ASSET, STATI_SOPRALLUOGO } from '@/constants'
 import type { Locale, Asset } from '@/types/database'
 import { useState } from 'react'
 
@@ -195,6 +196,10 @@ export default function ProprietaDetailPage() {
           </TabsTrigger>
           <TabsTrigger value="locali">Locali ({locali?.length || 0})</TabsTrigger>
           <TabsTrigger value="asset">Asset ({asset?.length || 0})</TabsTrigger>
+          <TabsTrigger value="foto" className="flex items-center gap-1.5">
+            <Camera className="h-3.5 w-3.5" />
+            Foto
+          </TabsTrigger>
           <TabsTrigger value="operativo">Operativo</TabsTrigger>
           <TabsTrigger value="documenti">Documenti</TabsTrigger>
         </TabsList>
@@ -255,7 +260,7 @@ export default function ProprietaDetailPage() {
                   <div className="flex items-center gap-2">
                     <Bed className="h-4 w-4 text-muted-foreground" />
                     <div>
-                      <p className="text-sm text-muted-foreground">Camere</p>
+                      <p className="text-sm text-muted-foreground">Locali</p>
                       <p className="font-medium">{proprieta.camere || '-'}</p>
                     </div>
                   </div>
@@ -313,10 +318,85 @@ export default function ProprietaDetailPage() {
               </CardContent>
             </Card>
 
-            {/* Codici STR */}
+            {/* Sopralluogo */}
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">Codici STR</CardTitle>
+                <CardTitle className="text-base flex items-center gap-2">
+                  <ClipboardCheck className="h-4 w-4" />
+                  Sopralluogo
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {(() => {
+                  const stato = proprieta.stato_sopralluogo || 'da_programmare'
+                  const statoInfo = STATI_SOPRALLUOGO.find(s => s.id === stato)
+                  return (
+                    <>
+                      <div className="flex items-center gap-2">
+                        <Badge className={statoInfo?.color || ''}>{statoInfo?.label || stato}</Badge>
+                        {proprieta.data_sopralluogo && (
+                          <span className="text-sm text-muted-foreground">
+                            {new Date(proprieta.data_sopralluogo).toLocaleDateString('it-IT')}
+                          </span>
+                        )}
+                      </div>
+
+                      {stato === 'da_programmare' && (
+                        <div className="space-y-2">
+                          <label className="text-sm text-muted-foreground">Data sopralluogo</label>
+                          <input
+                            type="date"
+                            className="block text-sm border rounded px-2 py-1 w-full"
+                            value={proprieta.data_sopralluogo || ''}
+                            onChange={(e) => {
+                              updateProprieta({
+                                id,
+                                data_sopralluogo: e.target.value || null,
+                                stato_sopralluogo: e.target.value ? 'programmato' : 'da_programmare',
+                              })
+                            }}
+                          />
+                        </div>
+                      )}
+
+                      {stato === 'programmato' && (
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            onClick={() => updateProprieta({ id, stato_sopralluogo: 'effettuato' })}
+                          >
+                            <Check className="h-3.5 w-3.5 mr-1" />
+                            Sopralluogo effettuato
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => updateProprieta({ id, stato_sopralluogo: 'da_programmare', data_sopralluogo: null })}
+                          >
+                            Annulla
+                          </Button>
+                        </div>
+                      )}
+
+                      <div>
+                        <label className="text-sm text-muted-foreground">Note sopralluogo</label>
+                        <textarea
+                          className="block mt-1 text-sm border rounded px-2 py-1 w-full min-h-[60px] resize-y"
+                          value={proprieta.note_sopralluogo || ''}
+                          placeholder="Osservazioni dal sopralluogo..."
+                          onChange={(e) => updateProprieta({ id, note_sopralluogo: e.target.value || null })}
+                        />
+                      </div>
+                    </>
+                  )
+                })()}
+              </CardContent>
+            </Card>
+
+            {/* Codici e Portali */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Codici e Portali</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
@@ -331,28 +411,18 @@ export default function ProprietaDetailPage() {
                 </div>
                 <Separator />
                 <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-sm text-muted-foreground">SCIA Protocollo</p>
-                    <p className="font-medium">{proprieta.scia_protocollo || '-'}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">SCIA Data</p>
-                    <p className="font-medium">{proprieta.scia_data || '-'}</p>
-                  </div>
-                </div>
-                <Separator />
-                <div className="grid grid-cols-2 gap-4">
                   <div className="flex items-center gap-2">
-                    <div className={`h-2 w-2 rounded-full ${proprieta.alloggiati_web_attivo ? 'bg-green-500' : 'bg-red-500'}`} />
+                    <div className={`h-2.5 w-2.5 rounded-full ${proprieta.alloggiati_web_attivo ? 'bg-green-500' : 'bg-red-500'}`} />
                     <span className="text-sm">Alloggiati Web</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className={`h-2 w-2 rounded-full ${proprieta.ross1000_attivo ? 'bg-green-500' : 'bg-red-500'}`} />
-                    <span className="text-sm">Ross1000</span>
+                    <div className={`h-2.5 w-2.5 rounded-full ${proprieta.ross1000_attivo ? 'bg-green-500' : 'bg-red-500'}`} />
+                    <span className="text-sm">ISTAT (Ross1000)</span>
                   </div>
                 </div>
               </CardContent>
             </Card>
+
           </div>
         </TabsContent>
 
@@ -515,6 +585,73 @@ export default function ProprietaDetailPage() {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Sicurezza */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base flex items-center gap-2">
+                  <ShieldCheck className="h-4 w-4" />
+                  Sicurezza
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {[
+                  {
+                    label: 'Estintore',
+                    checked: proprieta.sicurezza_estintore,
+                    field: 'sicurezza_estintore' as const,
+                    extra: proprieta.sicurezza_estintore ? (
+                      <div className="ml-6 mt-1">
+                        <label className="text-xs text-muted-foreground">Scadenza manutenzione</label>
+                        <input
+                          type="date"
+                          className="block mt-0.5 text-sm border rounded px-2 py-1"
+                          value={proprieta.sicurezza_estintore_scadenza || ''}
+                          onChange={(e) => updateProprieta({ id, sicurezza_estintore_scadenza: e.target.value || null })}
+                        />
+                        {proprieta.sicurezza_estintore_scadenza && new Date(proprieta.sicurezza_estintore_scadenza) < new Date() && (
+                          <p className="text-xs text-red-600 mt-0.5">Manutenzione scaduta</p>
+                        )}
+                      </div>
+                    ) : null,
+                  },
+                  { label: 'Targhetta espositiva', checked: proprieta.sicurezza_targhetta, field: 'sicurezza_targhetta' as const },
+                  {
+                    label: 'Rilevatore gas',
+                    checked: proprieta.sicurezza_rilevatore_gas,
+                    field: 'sicurezza_rilevatore_gas' as const,
+                    subtitle: !proprieta.sicurezza_rilevatore_gas_necessario ? '(non necessario)' : undefined,
+                  },
+                  { label: 'Rilevatore monossido', checked: proprieta.sicurezza_rilevatore_monossido, field: 'sicurezza_rilevatore_monossido' as const },
+                  { label: 'Cassetta pronto soccorso', checked: proprieta.sicurezza_cassetta_ps, field: 'sicurezza_cassetta_ps' as const },
+                ].map((item) => (
+                  <div key={item.field}>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={item.checked || false}
+                        onChange={(e) => updateProprieta({ id, [item.field]: e.target.checked })}
+                        className="rounded border-gray-300"
+                      />
+                      <span className="text-sm">{item.label}</span>
+                      {item.subtitle && <span className="text-xs text-muted-foreground">{item.subtitle}</span>}
+                    </label>
+                    {item.extra}
+                  </div>
+                ))}
+                <div className="mt-2">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={!proprieta.sicurezza_rilevatore_gas_necessario}
+                      onChange={(e) => updateProprieta({ id, sicurezza_rilevatore_gas_necessario: !e.target.checked })}
+                      className="rounded border-gray-300"
+                    />
+                    <span className="text-xs text-muted-foreground">Rilevatore gas non necessario (no allaccio gas)</span>
+                  </label>
+                </div>
+              </CardContent>
+            </Card>
           </div>
 
           {/* Regole Casa */}
@@ -528,6 +665,10 @@ export default function ProprietaDetailPage() {
               </p>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="foto" className="mt-6">
+          <FotoProprietaGallery proprietaId={id} />
         </TabsContent>
 
         <TabsContent value="documenti" className="mt-6">

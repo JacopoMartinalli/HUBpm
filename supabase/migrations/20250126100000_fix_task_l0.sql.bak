@@ -1,0 +1,20 @@
+-- ============================================
+-- FIX: Rimuove task "Registrare fonte lead" da L0
+-- La fonte lead viene selezionata alla creazione del lead
+-- ============================================
+
+-- Elimina il template task "Registrare fonte lead"
+DELETE FROM template_task
+WHERE tipo_entita = 'lead'
+AND fase = 'L0'
+AND titolo = 'Registrare fonte lead';
+
+-- Elimina anche i task già generati per questo template
+DELETE FROM task
+WHERE titolo = 'Registrare fonte lead'
+AND contatto_id IN (
+  SELECT id FROM contatti WHERE tipo = 'lead'
+);
+
+-- Verifica: ora L0 dovrebbe avere solo "Prima chiamata di qualifica"
+-- SELECT * FROM template_task WHERE tipo_entita = 'lead' AND fase = 'L0';

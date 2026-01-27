@@ -40,6 +40,7 @@ export function ProprietaDialog({ open, onOpenChange, contattoId }: ProprietaDia
     posti_letto: '2',
     camere: '1',
     bagni: '1',
+    mq: '',
   })
 
   // Aggiorna contatto_id quando cambia contattoId prop
@@ -85,7 +86,7 @@ export function ProprietaDialog({ open, onOpenChange, contattoId }: ProprietaDia
       max_ospiti: formData.posti_letto ? parseInt(formData.posti_letto) : null,
       camere: numCamere || null,
       bagni: numBagni || null,
-      mq: null,
+      mq: formData.mq ? parseInt(formData.mq) : null,
       // Catastali
       foglio: null,
       mappale: null,
@@ -171,6 +172,7 @@ export function ProprietaDialog({ open, onOpenChange, contattoId }: ProprietaDia
       posti_letto: '2',
       camere: '1',
       bagni: '1',
+      mq: '',
     })
     onOpenChange(false)
   }
@@ -309,7 +311,7 @@ export function ProprietaDialog({ open, onOpenChange, contattoId }: ProprietaDia
             </div>
 
             {/* Dati strutturali */}
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-4 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="posti_letto">Posti Letto</Label>
                 <Input
@@ -322,7 +324,7 @@ export function ProprietaDialog({ open, onOpenChange, contattoId }: ProprietaDia
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="camere">Camere</Label>
+                <Label htmlFor="camere">Locali</Label>
                 <Input
                   id="camere"
                   type="number"
@@ -347,6 +349,17 @@ export function ProprietaDialog({ open, onOpenChange, contattoId }: ProprietaDia
                     const val = Math.max(1, parseInt(e.target.value) || 1)
                     setFormData({ ...formData, bagni: val.toString() })
                   }}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="mq">Mq</Label>
+                <Input
+                  id="mq"
+                  type="number"
+                  min="1"
+                  placeholder="50"
+                  value={formData.mq}
+                  onChange={(e) => setFormData({ ...formData, mq: e.target.value })}
                 />
               </div>
             </div>

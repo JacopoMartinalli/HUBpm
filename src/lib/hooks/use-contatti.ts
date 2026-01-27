@@ -240,3 +240,44 @@ export function useMarkLeadAsLost() {
     },
   })
 }
+
+// Tipo esteso per clienti con conteggio proprietà
+interface ContattoConProprieta extends Contatto {
+  proprieta_count?: number
+  proprieta_operative?: number
+}
+
+// Clienti derivati: contatti (lead o clienti) che hanno almeno una proprietà in fase P3+
+export function useClientiConProprieta() {
+  return useQuery({
+    queryKey: [...contattiKeys.all, 'con-proprieta'],
+    queryFn: async () => {
+      // Query per ottenere contatti con proprietà operative (P3 o P4)
+      const { data, error } = await supabase
+        .from('contatti')
+        .select(`
+          *,
+          proprieta!proprieta_contatto_id_fkey(id, fase)
+        `)
+        .eq('tenant_id', DEFAULT_TENANT_ID)
+        .in('tipo', ['lead', 'cliente'])
+
+      if (error) throw error
+
+      // Filtra solo quelli che hanno almeno una proprietà in P3 o P4
+      const clientiConProprieta = (data || [])
+        .map((contatto: Contatto & { proprieta?: Array<{ id: string; fase: string }> }) => {
+          const proprieta = contatto.proprieta || []
+          const proprietaOperative = proprieta.filter(p => ['P3', 'P4'].includes(p.fase)).length
+          return {
+            ...contatto,
+            proprieta_count: proprieta.length,
+            proprieta_operative: proprietaOperative,
+          }
+        })
+        .filter((c: ContattoConProprieta) => (c.proprieta_operative || 0) > 0)
+
+      return clientiConProprieta as ContattoConProprieta[]
+    },
+  })
+}

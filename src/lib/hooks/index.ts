@@ -43,6 +43,9 @@ export * from './use-erogazione'
 // Proposte Commerciali
 export * from './use-proposte'
 
+// Interazioni (storico chiamate/messaggi)
+export * from './use-interazioni'
+
 // Document Templates
 export * from './useDocumentTemplates'
 

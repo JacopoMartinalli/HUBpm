@@ -35,7 +35,7 @@ import '@/styles/template-editor.css'
 const templateSchema = z.object({
   nome: z.string().min(1, 'Nome obbligatorio'),
   descrizione: z.string().optional(),
-  categoria: z.enum(['preventivo', 'proposta', 'contratto', 'privacy', 'mandato', 'lettera', 'report']),
+  categoria: z.enum(['preventivo', 'proposta', 'contratto', 'mandato_pf', 'mandato_pg', 'procura', 'elenco_dotazioni', 'report_mensile']),
   formato_pagina: z.enum(['A4', 'A5', 'Letter']),
   orientamento: z.enum(['portrait', 'landscape']),
   attivo: z.boolean(),

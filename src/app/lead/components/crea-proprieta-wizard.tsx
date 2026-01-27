@@ -47,6 +47,7 @@ interface ProprietaFormData {
   camere: number
   bagni: number
   posti_letto: number
+  mq: number | null
   usaIndirizzoPrecedente: boolean
 }
 
@@ -104,6 +105,7 @@ export function CreaProprietaWizard({
         camere: 1,
         bagni: 1,
         posti_letto: 2,
+        mq: null,
         usaIndirizzoPrecedente: false,
       })
     }
@@ -194,7 +196,7 @@ export function CreaProprietaWizard({
           max_ospiti: form.posti_letto,
           camere: form.camere,
           bagni: form.bagni,
-          mq: null,
+          mq: form.mq,
           foglio: null,
           mappale: null,
           subalterno: null,
@@ -476,9 +478,9 @@ export function CreaProprietaWizard({
               </div>
 
               {/* Dati strutturali */}
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-4 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="camere">Camere</Label>
+                  <Label htmlFor="camere">Locali</Label>
                   <Input
                     id="camere"
                     type="number"
@@ -505,6 +507,17 @@ export function CreaProprietaWizard({
                     min="1"
                     value={currentForm?.posti_letto || 2}
                     onChange={(e) => updateCurrentForm('posti_letto', Math.max(1, parseInt(e.target.value) || 1))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="mq">Mq</Label>
+                  <Input
+                    id="mq"
+                    type="number"
+                    min="1"
+                    placeholder="50"
+                    value={currentForm?.mq || ''}
+                    onChange={(e) => updateCurrentForm('mq', e.target.value ? parseInt(e.target.value) : null)}
                   />
                 </div>
               </div>

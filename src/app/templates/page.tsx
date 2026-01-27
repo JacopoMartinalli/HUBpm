@@ -7,24 +7,18 @@ import {
   Copy,
   Pencil,
   Trash2,
-  MoreHorizontal,
   Star,
   StarOff,
   Eye,
   EyeOff,
-  Check,
+  Download,
+  ExternalLink,
+  FilePlus,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
+import { Card, CardContent } from '@/components/ui/card'
 import { PageHeader, LoadingSpinner, EmptyState, ConfirmDialog } from '@/components/shared'
 import {
   useDocumentTemplates,
@@ -33,13 +27,14 @@ import {
   useDuplicateDocumentTemplate,
   useSetDefaultTemplate,
 } from '@/lib/hooks/useDocumentTemplates'
-import { CATEGORIE_TEMPLATE } from '@/constants'
+import { useDocumentiGenerati } from '@/lib/hooks/useDocumentiGenerati'
+import { CATEGORIE_TEMPLATE, STATI_DOCUMENTO_GENERATO } from '@/constants'
 import type { DocumentTemplate, CategoriaTemplate } from '@/types/database'
 import { TemplateDialog } from './components/template-dialog'
 import { TemplatePreviewDialog } from './components/template-preview-dialog'
 
 export default function TemplatesPage() {
-  const [selectedCategoria, setSelectedCategoria] = useState<CategoriaTemplate | 'all'>('all')
+  const [activeTab, setActiveTab] = useState('templates')
   const [dialogOpen, setDialogOpen] = useState(false)
   const [selectedTemplate, setSelectedTemplate] = useState<DocumentTemplate | null>(null)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
@@ -48,9 +43,8 @@ export default function TemplatesPage() {
   const [templateToPreview, setTemplateToPreview] = useState<DocumentTemplate | null>(null)
 
   // Data
-  const { data: templates, isLoading } = useDocumentTemplates(
-    selectedCategoria === 'all' ? {} : { categoria: selectedCategoria }
-  )
+  const { data: templates, isLoading: templatesLoading } = useDocumentTemplates({})
+  const { data: documentiGenerati, isLoading: documentiLoading } = useDocumentiGenerati()
 
   // Mutations
   const deleteTemplate = useDeleteDocumentTemplate()
@@ -63,8 +57,13 @@ export default function TemplatesPage() {
     setDialogOpen(true)
   }
 
-  const handleNew = (categoria?: CategoriaTemplate) => {
-    setSelectedTemplate(categoria ? ({ categoria } as DocumentTemplate) : null)
+  const handleNew = () => {
+    setSelectedTemplate(null)
+    setDialogOpen(true)
+  }
+
+  const handleNewWithCategoria = (categoria: CategoriaTemplate) => {
+    setSelectedTemplate({ categoria } as DocumentTemplate)
     setDialogOpen(true)
   }
 
@@ -82,13 +81,11 @@ export default function TemplatesPage() {
 
   const handleTogglePredefinito = async (template: DocumentTemplate) => {
     if (template.predefinito) {
-      // Rimuovi predefinito
       await updateTemplate.mutateAsync({
         id: template.id,
         data: { predefinito: false },
       })
     } else {
-      // Imposta come predefinito (rimuove automaticamente dagli altri)
       await setDefaultTemplate.mutateAsync({
         id: template.id,
         categoria: template.categoria,
@@ -107,213 +104,247 @@ export default function TemplatesPage() {
     setTemplateToDelete(null)
   }
 
-  // Raggruppa per categoria
-  const templatesByCategory = templates?.reduce((acc, template) => {
-    if (!acc[template.categoria]) {
-      acc[template.categoria] = []
-    }
-    acc[template.categoria].push(template)
-    return acc
-  }, {} as Record<CategoriaTemplate, DocumentTemplate[]>)
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <LoadingSpinner />
-      </div>
-    )
-  }
-
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Template Documenti"
-        description="Crea e personalizza i template per preventivi, proposte e contratti"
+        title="Documenti & Template"
+        description="Gestisci template e documenti generati"
         actions={
-          <Button onClick={() => handleNew()}>
-            <Plus className="h-4 w-4 mr-2" />
-            Nuovo Template
-          </Button>
+          activeTab === 'templates' ? (
+            <Button onClick={handleNew}>
+              <Plus className="h-4 w-4 mr-2" />
+              Nuovo Template
+            </Button>
+          ) : undefined
         }
       />
 
-      {/* Filtro categorie */}
-      <Tabs
-        value={selectedCategoria}
-        onValueChange={(v) => setSelectedCategoria(v as CategoriaTemplate | 'all')}
-      >
-        <TabsList className="flex-wrap h-auto gap-1 p-1">
-          <TabsTrigger value="all" className="text-sm">
-            Tutti ({templates?.length || 0})
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList>
+          <TabsTrigger value="templates">
+            <FilePlus className="h-4 w-4 mr-1.5" />
+            Template ({templates?.length || 0})
           </TabsTrigger>
-          {CATEGORIE_TEMPLATE.map((cat) => {
-            const count = templatesByCategory?.[cat.id]?.length || 0
-            return (
-              <TabsTrigger key={cat.id} value={cat.id} className="text-sm">
-                <span className="mr-1">{cat.icon}</span>
-                {cat.label} ({count})
-              </TabsTrigger>
-            )
-          })}
+          <TabsTrigger value="documenti">
+            <FileText className="h-4 w-4 mr-1.5" />
+            Documenti Generati ({documentiGenerati?.length || 0})
+          </TabsTrigger>
         </TabsList>
 
-        {/* Contenuto */}
-        <TabsContent value={selectedCategoria} className="mt-6">
-          {templates && templates.length > 0 ? (
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {templates.map((template) => {
-                const categoria = CATEGORIE_TEMPLATE.find((c) => c.id === template.categoria)
+        {/* =================== TAB TEMPLATE =================== */}
+        <TabsContent value="templates" className="mt-4">
+          {templatesLoading ? (
+            <div className="flex items-center justify-center h-40">
+              <LoadingSpinner />
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {CATEGORIE_TEMPLATE.map((cat) => {
+                const catTemplates = templates?.filter((t) => t.categoria === cat.id) || []
+                const hasTemplates = catTemplates.length > 0
 
                 return (
-                  <Card
-                    key={template.id}
-                    className={`transition-all ${!template.attivo ? 'opacity-60' : ''
-                      } ${template.predefinito ? 'ring-2 ring-blue-500' : ''}`}
-                  >
-                    <CardHeader className="pb-3">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            <CardTitle className="text-lg truncate">
-                              {template.nome}
-                            </CardTitle>
-                            {template.predefinito && (
-                              <Badge variant="default" className="bg-blue-500 text-xs">
-                                Predefinito
-                              </Badge>
-                            )}
-                          </div>
-                          <div className="flex items-center gap-2 mt-1">
-                            <Badge variant="outline" className="text-xs">
-                              {categoria?.icon} {categoria?.label}
-                            </Badge>
-                            {!template.attivo && (
-                              <Badge variant="secondary" className="text-xs">
-                                Disattivato
-                              </Badge>
-                            )}
+                  <Card key={cat.id}>
+                    <CardContent className="p-0">
+                      {/* Header categoria */}
+                      <div className="flex items-center justify-between px-4 py-3 border-b bg-muted/30">
+                        <div className="flex items-center gap-2">
+                          <span className="text-lg">{cat.icon}</span>
+                          <div>
+                            <span className="font-medium text-sm">{cat.label}</span>
+                            <span className="text-xs text-muted-foreground ml-2">{cat.description}</span>
                           </div>
                         </div>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="sm">
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => handlePreview(template)}>
-                              <Eye className="h-4 w-4 mr-2" />
-                              Anteprima
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleEdit(template)}>
-                              <Pencil className="h-4 w-4 mr-2" />
-                              Modifica
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleDuplicate(template)}>
-                              <Copy className="h-4 w-4 mr-2" />
-                              Duplica
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem onClick={() => handleToggleAttivo(template)}>
-                              {template.attivo ? (
-                                <>
-                                  <EyeOff className="h-4 w-4 mr-2" />
-                                  Disattiva
-                                </>
-                              ) : (
-                                <>
-                                  <Eye className="h-4 w-4 mr-2" />
-                                  Attiva
-                                </>
-                              )}
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleTogglePredefinito(template)}>
-                              {template.predefinito ? (
-                                <>
-                                  <StarOff className="h-4 w-4 mr-2" />
-                                  Rimuovi predefinito
-                                </>
-                              ) : (
-                                <>
-                                  <Star className="h-4 w-4 mr-2" />
-                                  Imposta predefinito
-                                </>
-                              )}
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                              className="text-destructive"
-                              onClick={() => {
-                                setTemplateToDelete({
-                                  id: template.id,
-                                  nome: template.nome,
-                                })
-                                setDeleteDialogOpen(true)
-                              }}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 text-xs"
+                          onClick={() => handleNewWithCategoria(cat.id as CategoriaTemplate)}
+                        >
+                          <Plus className="h-3.5 w-3.5 mr-1" />
+                          Aggiungi
+                        </Button>
+                      </div>
+
+                      {/* Template della categoria */}
+                      {hasTemplates ? (
+                        <div className="divide-y">
+                          {catTemplates.map((template) => (
+                            <div
+                              key={template.id}
+                              className={`flex items-center justify-between px-4 py-2.5 hover:bg-muted/50 transition-colors ${
+                                !template.attivo ? 'opacity-50' : ''
+                              }`}
                             >
-                              <Trash2 className="h-4 w-4 mr-2" />
-                              Elimina
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
-                    </CardHeader>
-                    <CardContent>
-                      {template.descrizione && (
-                        <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
-                          {template.descrizione}
-                        </p>
+                              <div className="flex items-center gap-2 min-w-0 flex-1">
+                                <FileText className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                                <span className="text-sm truncate">{template.nome}</span>
+                                {template.predefinito && (
+                                  <Badge variant="default" className="bg-blue-500 text-xs flex-shrink-0">
+                                    Predefinito
+                                  </Badge>
+                                )}
+                                {!template.attivo && (
+                                  <Badge variant="secondary" className="text-xs flex-shrink-0">
+                                    Disattivato
+                                  </Badge>
+                                )}
+                                <span className="text-xs text-muted-foreground flex-shrink-0">
+                                  v{template.versione}
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-1 flex-shrink-0">
+                                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handlePreview(template)} title="Anteprima">
+                                  <Eye className="h-3.5 w-3.5" />
+                                </Button>
+                                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleEdit(template)} title="Modifica">
+                                  <Pencil className="h-3.5 w-3.5" />
+                                </Button>
+                                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleDuplicate(template)} title="Duplica">
+                                  <Copy className="h-3.5 w-3.5" />
+                                </Button>
+                                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleTogglePredefinito(template)} title={template.predefinito ? 'Rimuovi predefinito' : 'Imposta predefinito'}>
+                                  {template.predefinito ? <StarOff className="h-3.5 w-3.5 text-yellow-500" /> : <Star className="h-3.5 w-3.5" />}
+                                </Button>
+                                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleToggleAttivo(template)} title={template.attivo ? 'Disattiva' : 'Attiva'}>
+                                  {template.attivo ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5 text-green-600" />}
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-7 w-7 text-destructive hover:text-destructive"
+                                  onClick={() => {
+                                    setTemplateToDelete({ id: template.id, nome: template.nome })
+                                    setDeleteDialogOpen(true)
+                                  }}
+                                  title="Elimina"
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </Button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="px-4 py-4 text-center">
+                          <p className="text-sm text-muted-foreground">Nessun template creato</p>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="mt-2"
+                            onClick={() => handleNewWithCategoria(cat.id as CategoriaTemplate)}
+                          >
+                            <Plus className="h-3.5 w-3.5 mr-1" />
+                            Crea Template
+                          </Button>
+                        </div>
                       )}
-
-                      {/* Info variabili usate */}
-                      <div className="space-y-2">
-                        {template.variabili_utilizzate && template.variabili_utilizzate.length > 0 && (
-                          <div className="flex flex-wrap gap-1">
-                            {template.variabili_utilizzate.slice(0, 4).map((v) => (
-                              <Badge key={v} variant="secondary" className="text-xs">
-                                @{v}
-                              </Badge>
-                            ))}
-                            {template.variabili_utilizzate.length > 4 && (
-                              <Badge variant="secondary" className="text-xs">
-                                +{template.variabili_utilizzate.length - 4}
-                              </Badge>
-                            )}
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Footer */}
-                      <div className="mt-4 pt-3 border-t flex items-center justify-between text-xs text-muted-foreground">
-                        <span>
-                          Formato: {template.formato_pagina} {template.orientamento}
-                        </span>
-                        <span>v{template.versione}</span>
-                      </div>
                     </CardContent>
                   </Card>
                 )
               })}
             </div>
+          )}
+        </TabsContent>
+
+        {/* =================== TAB DOCUMENTI GENERATI =================== */}
+        <TabsContent value="documenti" className="mt-4">
+          {documentiLoading ? (
+            <div className="flex items-center justify-center h-40">
+              <LoadingSpinner />
+            </div>
+          ) : documentiGenerati && documentiGenerati.length > 0 ? (
+            <Card>
+              <CardContent className="p-0">
+                {/* Header tabella */}
+                <div className="grid grid-cols-[1fr_120px_150px_120px_100px_80px] gap-2 px-4 py-2 border-b bg-muted/50 text-xs font-medium text-muted-foreground">
+                  <span>Documento</span>
+                  <span>Categoria</span>
+                  <span>Riferimento</span>
+                  <span>Data</span>
+                  <span>Stato</span>
+                  <span className="text-right">Azioni</span>
+                </div>
+                <div className="divide-y">
+                  {documentiGenerati.map((doc) => {
+                    const categoria = CATEGORIE_TEMPLATE.find((c) => c.id === doc.categoria)
+                    const statoConfig = STATI_DOCUMENTO_GENERATO.find((s) => s.id === doc.stato)
+                    const riferimento = doc.contatto
+                      ? `${(doc.contatto as any).nome || ''} ${(doc.contatto as any).cognome || ''}`.trim()
+                      : doc.proprieta
+                        ? (doc.proprieta as any).nome || ''
+                        : '—'
+
+                    return (
+                      <div
+                        key={doc.id}
+                        className="grid grid-cols-[1fr_120px_150px_120px_100px_80px] gap-2 px-4 py-3 items-center hover:bg-muted/50 transition-colors"
+                      >
+                        {/* Titolo */}
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium truncate">{doc.titolo}</p>
+                          {doc.numero && (
+                            <p className="text-xs text-muted-foreground">{doc.numero}</p>
+                          )}
+                        </div>
+
+                        {/* Categoria */}
+                        <Badge variant="outline" className="text-xs w-fit">
+                          {categoria?.icon} {categoria?.label}
+                        </Badge>
+
+                        {/* Riferimento */}
+                        <span className="text-sm text-muted-foreground truncate">
+                          {riferimento}
+                        </span>
+
+                        {/* Data */}
+                        <span className="text-xs text-muted-foreground">
+                          {new Date(doc.data_generazione).toLocaleDateString('it-IT', {
+                            day: '2-digit',
+                            month: 'short',
+                            year: 'numeric',
+                          })}
+                        </span>
+
+                        {/* Stato */}
+                        <Badge className={`text-xs w-fit ${statoConfig?.color || ''}`}>
+                          {statoConfig?.icon} {statoConfig?.label || doc.stato}
+                        </Badge>
+
+                        {/* Azioni */}
+                        <div className="flex items-center justify-end gap-1">
+                          {doc.file_url && (
+                            <a
+                              href={doc.file_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              title="Apri documento"
+                            >
+                              <Button variant="ghost" size="icon" className="h-7 w-7">
+                                <ExternalLink className="h-3.5 w-3.5" />
+                              </Button>
+                            </a>
+                          )}
+                          {doc.file_url && (
+                            <a href={doc.file_url} download title="Scarica">
+                              <Button variant="ghost" size="icon" className="h-7 w-7">
+                                <Download className="h-3.5 w-3.5" />
+                              </Button>
+                            </a>
+                          )}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </CardContent>
+            </Card>
           ) : (
             <EmptyState
               icon={FileText}
-              title="Nessun template"
-              description={
-                selectedCategoria === 'all'
-                  ? 'Crea il tuo primo template per iniziare a generare documenti'
-                  : `Nessun template in questa categoria. Creane uno nuovo.`
-              }
-              action={
-                <Button
-                  onClick={() =>
-                    handleNew(selectedCategoria === 'all' ? undefined : selectedCategoria)
-                  }
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Crea Template
-                </Button>
-              }
+              title="Nessun documento generato"
+              description="I documenti generati da template appariranno qui"
             />
           )}
         </TabsContent>

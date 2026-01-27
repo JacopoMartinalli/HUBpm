@@ -11,7 +11,7 @@ INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_typ
 VALUES (
   'documenti',
   'documenti',
-  false,  -- privato, richiede auth
+  true,  -- pubblico per development
   52428800,  -- 50MB max per file
   ARRAY['application/pdf', 'image/jpeg', 'image/png', 'image/webp']
 )

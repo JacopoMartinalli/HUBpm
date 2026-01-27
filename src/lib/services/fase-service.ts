@@ -24,25 +24,28 @@ export interface CambioFaseResult {
 }
 
 // ============================================
-// COSTANTI FASI
+// COSTANTI FASI (Sistema Semplificato)
 // ============================================
 
-// L0: Nuovo Lead, L1: Contattato, L2: In Valutazione, L3: Qualificato
-const FASI_LEAD = ['L0', 'L1', 'L2', 'L3']
-// PL0: Registrata, PL1: Info Raccolte, PL2: Sopralluogo, PL3: Valutata
-const FASI_PROPRIETA_LEAD = ['PL0', 'PL1', 'PL2', 'PL3']
-const FASI_CLIENTE = ['C0', 'C1', 'C2', 'C3']
+// Lead: L0 (Nuovo) → L1 (Qualificato)
+const FASI_LEAD = ['L0', 'L1']
+// DEPRECATO: Proprietà Lead non più usate
+const FASI_PROPRIETA_LEAD = ['PL0']
+// DEPRECATO: Cliente è uno stato derivato
+const FASI_CLIENTE = ['C0']
+// Proprietà: Pipeline principale
+// P0: Valutazione, P1: Proposta, P2: Onboarding, P3: Setup, P4: Operativa, P5: Cessata
 const FASI_PROPRIETA = ['P0', 'P1', 'P2', 'P3', 'P4', 'P5']
 
 // Fasi che richiedono documenti obbligatori completati per avanzare (hard block)
 const FASI_CON_BLOCCO_DOCUMENTI: Record<TipoEntita, string[]> = {
-  lead: [], // Lead non ha blocchi documenti
-  proprieta_lead: [], // Proprieta lead non ha blocchi documenti
-  cliente: ['C0'], // C0 richiede documenti obbligatori per passare a C1
-  proprieta: [], // P0 -> P1 libero, P1 -> P2 gestito da accettazione proposta
+  lead: [],
+  proprieta_lead: [],
+  cliente: [],
+  proprieta: ['P2'], // P2 (Onboarding) richiede documenti per passare a P3 (Setup)
 }
 
-// Blocchi speciali per lead e proprieta_lead
+// Blocchi speciali
 interface BloccoSpeciale {
   tipo: 'soft' | 'hard'
   condizione: string
@@ -50,17 +53,13 @@ interface BloccoSpeciale {
 }
 
 const BLOCCHI_SPECIALI: Record<TipoEntita, Record<string, BloccoSpeciale>> = {
-  lead: {
-    // L0 -> L1: Prima chiamata completata (soft block - puoi forzare)
-    'L0': { tipo: 'soft', condizione: 'prima_chiamata', messaggio: 'Prima chiamata non ancora completata' },
-    // L1 -> L2: Almeno 1 proprieta lead aggiunta (hard block)
-    'L1': { tipo: 'hard', condizione: 'proprieta_lead', messaggio: 'Aggiungi almeno una proprietà lead per procedere' },
-    // L2 -> L3: Almeno 1 proprieta in PL3 (Valutata) (hard block)
-    'L2': { tipo: 'hard', condizione: 'proprieta_valutata', messaggio: 'Almeno una proprietà deve essere in fase Valutata (PL3)' },
-  },
+  lead: {},
   proprieta_lead: {},
   cliente: {},
-  proprieta: {},
+  proprieta: {
+    // P1 -> P2: Proposta accettata (hard block)
+    'P1': { tipo: 'hard', condizione: 'proposta_accettata', messaggio: 'La proposta commerciale deve essere accettata per procedere' },
+  },
 }
 
 // ============================================
@@ -167,22 +166,22 @@ async function verificaBloccoSpeciale(
       return { superato: (proprieta?.length || 0) > 0 }
     }
 
-    case 'proprieta_valutata': {
-      // Verifica se almeno 1 proprieta è in fase P1 o superiore (valutata/pronta)
-      const { data: proprieta, error } = await supabase
-        .from('proprieta')
-        .select('id, fase')
+    case 'proposta_accettata': {
+      // Verifica se esiste una proposta accettata per questa proprietà
+      const { data: proposte, error } = await supabase
+        .from('proposte_commerciali')
+        .select('id')
         .eq('tenant_id', DEFAULT_TENANT_ID)
-        .eq('contatto_id', entityId)
-        .in('fase', ['P1', 'P2', 'P3', 'P4', 'P5'])
+        .eq('proprieta_id', entityId)
+        .eq('stato', 'accettata')
         .limit(1)
 
       if (error) {
-        console.error('Errore verifica proprieta_valutata:', error)
+        console.error('Errore verifica proposta_accettata:', error)
         return { superato: false }
       }
 
-      return { superato: (proprieta?.length || 0) > 0 }
+      return { superato: (proposte?.length || 0) > 0 }
     }
 
     default:

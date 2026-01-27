@@ -5,21 +5,22 @@
 export type TipoContatto = 'lead' | 'cliente' | 'partner'
 export type TipoPersona = 'persona_fisica' | 'persona_giuridica'
 
-// Fasi Lead (L0: Primo Contatto, L1: Qualifica in Corso, L2: Lead Qualificato, L3: Pronto Conversione)
-export type FaseLead = 'L0' | 'L1' | 'L2' | 'L3'
+// Fasi Lead (semplificato: L0 nuovo, L1 qualificato)
+export type FaseLead = 'L0' | 'L1'
 export type EsitoLead = 'in_corso' | 'vinto' | 'perso'
 
-// Fasi Proprietà Lead (PL0-PL3, rimossa PL4)
-export type FaseProprietaLead = 'PL0' | 'PL1' | 'PL2' | 'PL3'
+// DEPRECATO: Proprietà Lead non più usate
+export type FaseProprietaLead = 'PL0'
 export type EsitoProprietaLead = 'in_corso' | 'confermato' | 'scartato'
 
 // Motivi Lead Perso
 export type MotivoLeadPerso = 'prezzo' | 'competitor' | 'non_risponde' | 'tempistiche' | 'proprieta_non_idonea' | 'cambio_idea' | 'altro'
 
-// Fasi Cliente
-export type FaseCliente = 'C0' | 'C1' | 'C2' | 'C3'
+// DEPRECATO: Cliente è uno stato derivato (ha proprietà P3+), non una pipeline
+export type FaseCliente = 'C0'
 
-// Fasi Proprietà
+// Fasi Proprietà (pipeline principale)
+// P0: Valutazione, P1: Proposta, P2: Onboarding, P3: Setup, P4: Operativa, P5: Cessata
 export type FaseProprieta = 'P0' | 'P1' | 'P2' | 'P3' | 'P4' | 'P5'
 
 // Partner
@@ -115,6 +116,19 @@ export interface Contatto {
   specializzazioni: string | null
   tariffa_default: number | null
   tariffa_tipo: TipoTariffa | null
+  // Società (persona_giuridica)
+  ragione_sociale: string | null
+  legale_rapp_nome: string | null
+  legale_rapp_cognome: string | null
+  legale_rapp_codice_fiscale: string | null
+  referente_nome: string | null
+  referente_cognome: string | null
+  referente_email: string | null
+  referente_telefono: string | null
+  referente_ruolo: string | null
+  // Follow-up
+  data_prossimo_followup: string | null
+  iban: string | null
   // Common
   note: string | null
   created_at: string
@@ -197,6 +211,18 @@ export interface Proprieta {
   regole_casa: string | null
   smaltimento_rifiuti: string | null
   parcheggio: string | null
+  // Sicurezza
+  sicurezza_estintore: boolean
+  sicurezza_estintore_scadenza: string | null
+  sicurezza_targhetta: boolean
+  sicurezza_rilevatore_gas: boolean
+  sicurezza_rilevatore_gas_necessario: boolean
+  sicurezza_rilevatore_monossido: boolean
+  sicurezza_cassetta_ps: boolean
+  // Sopralluogo
+  data_sopralluogo: string | null
+  stato_sopralluogo: StatoSopralluogo
+  note_sopralluogo: string | null
   note: string | null
   created_at: string
   updated_at: string
@@ -204,6 +230,41 @@ export interface Proprieta {
   contatto?: Contatto
   locali?: Locale[]
   asset?: Asset[]
+}
+
+// Sopralluogo
+export type StatoSopralluogo = 'da_programmare' | 'programmato' | 'effettuato'
+
+// Foto proprietà
+export interface FotoProprieta {
+  id: string
+  tenant_id: string
+  proprieta_id: string
+  url: string
+  file_name: string
+  file_size: number | null
+  storage_path: string
+  categoria: CategoriaFoto | null
+  note: string | null
+  ordine: number
+  created_at: string
+}
+
+export type CategoriaFoto = 'esterno' | 'soggiorno' | 'camera' | 'bagno' | 'cucina' | 'altro'
+
+// Interazioni (storico chiamate/messaggi)
+export type TipoInterazione = 'chiamata' | 'email' | 'messaggio' | 'incontro' | 'nota'
+export type EsitoInterazione = 'risposto' | 'non_risposto' | 'occupato' | 'richiamato' | 'inviato' | 'ricevuto' | null
+
+export interface Interazione {
+  id: string
+  tenant_id: string
+  contatto_id: string
+  tipo: TipoInterazione
+  data: string
+  note: string | null
+  esito: EsitoInterazione
+  created_at: string
 }
 
 export interface Locale {
@@ -723,13 +784,33 @@ export interface PrenotazioneDettaglio extends Prenotazione {
 // TIPI PER INSERT/UPDATE
 // ============================================
 
-export type ContattoInsert = Omit<Contatto, 'id' | 'created_at' | 'updated_at'>
+export type ContattoInsert = Omit<Contatto, 'id' | 'created_at' | 'updated_at' | 'ragione_sociale' | 'legale_rapp_nome' | 'legale_rapp_cognome' | 'legale_rapp_codice_fiscale' | 'referente_nome' | 'referente_cognome' | 'referente_email' | 'referente_telefono' | 'referente_ruolo' | 'data_prossimo_followup' | 'iban'> & {
+  ragione_sociale?: string | null
+  legale_rapp_nome?: string | null
+  legale_rapp_cognome?: string | null
+  legale_rapp_codice_fiscale?: string | null
+  referente_nome?: string | null
+  referente_cognome?: string | null
+  referente_email?: string | null
+  referente_telefono?: string | null
+  referente_ruolo?: string | null
+  data_prossimo_followup?: string | null
+  iban?: string | null
+}
 export type ContattoUpdate = Partial<ContattoInsert>
 
 export type ProprietaLeadInsert = Omit<ProprietaLead, 'id' | 'created_at' | 'updated_at' | 'contatto'>
 export type ProprietaLeadUpdate = Partial<ProprietaLeadInsert>
 
-export type ProprietaInsert = Omit<Proprieta, 'id' | 'created_at' | 'updated_at' | 'contatto' | 'locali' | 'asset'>
+export type ProprietaInsert = Omit<Proprieta, 'id' | 'created_at' | 'updated_at' | 'contatto' | 'locali' | 'asset' | 'sicurezza_estintore' | 'sicurezza_estintore_scadenza' | 'sicurezza_targhetta' | 'sicurezza_rilevatore_gas' | 'sicurezza_rilevatore_gas_necessario' | 'sicurezza_rilevatore_monossido' | 'sicurezza_cassetta_ps'> & {
+  sicurezza_estintore?: boolean
+  sicurezza_estintore_scadenza?: string | null
+  sicurezza_targhetta?: boolean
+  sicurezza_rilevatore_gas?: boolean
+  sicurezza_rilevatore_gas_necessario?: boolean
+  sicurezza_rilevatore_monossido?: boolean
+  sicurezza_cassetta_ps?: boolean
+}
 export type ProprietaUpdate = Partial<ProprietaInsert>
 
 export type LocaleInsert = Omit<Locale, 'id' | 'created_at' | 'updated_at'>
@@ -913,7 +994,7 @@ export type PropertyManagerUpdate = Partial<PropertyManagerInsert>
 // DOCUMENT TEMPLATES (Sistema Template Dinamici)
 // ============================================
 
-export type CategoriaTemplate = 'preventivo' | 'proposta' | 'contratto' | 'privacy' | 'mandato' | 'lettera' | 'report'
+export type CategoriaTemplate = 'preventivo' | 'proposta' | 'contratto' | 'mandato_pf' | 'mandato_pg' | 'procura' | 'elenco_dotazioni' | 'report_mensile'
 export type FormatoPagina = 'A4' | 'A5' | 'Letter'
 export type OrientamentoPagina = 'portrait' | 'landscape'
 export type StatoDocumentoGenerato = 'generato' | 'inviato' | 'visto' | 'firmato' | 'archiviato' | 'scaduto' | 'annullato'

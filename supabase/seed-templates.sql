@@ -113,11 +113,9 @@ INSERT INTO template_task (tenant_id, tipo_entita, fase, titolo, descrizione, ca
 
 -- C0: Onboarding
 INSERT INTO template_documenti (tenant_id, tipo_entita, fase, nome, descrizione, categoria, obbligatorio, ordine) VALUES
-('00000000-0000-0000-0000-000000000001', 'cliente', 'C0', 'Documento identita', 'Carta identita o passaporto del cliente', 'identita', true, 1),
-('00000000-0000-0000-0000-000000000001', 'cliente', 'C0', 'Codice fiscale', 'Tessera sanitaria o documento con CF', 'fiscale', true, 2),
-('00000000-0000-0000-0000-000000000001', 'cliente', 'C0', 'Consenso trattamento dati', 'Informativa privacy firmata', 'contratti', true, 3),
-('00000000-0000-0000-0000-000000000001', 'cliente', 'C0', 'Contratto di gestione', 'Contratto di property management firmato', 'contratti', true, 4),
-('00000000-0000-0000-0000-000000000001', 'cliente', 'C0', 'Visura camerale', 'Solo per societa - visura CCIAA', 'fiscale', false, 5);
+('00000000-0000-0000-0000-000000000001', 'cliente', 'C0', 'Codice fiscale', 'Tessera sanitaria o documento con CF', 'fiscale', true, 1),
+('00000000-0000-0000-0000-000000000001', 'cliente', 'C0', 'Documento identita', 'Carta identita o passaporto valido', 'identita', true, 2),
+('00000000-0000-0000-0000-000000000001', 'cliente', 'C0', 'Privacy firmata', 'Informativa privacy e consenso trattamento dati firmato', 'contratti', true, 3);
 
 -- ============================================
 -- TEMPLATE DOCUMENTI - PROPRIETA

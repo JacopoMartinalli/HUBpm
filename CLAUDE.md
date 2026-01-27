@@ -6,7 +6,7 @@ Sistema gestionale per Property Manager specializzato in affitti brevi. Gestisce
 ## Stack Tecnologico
 - **Frontend**: Next.js 14+ (App Router), React, TypeScript
 - **Styling**: Tailwind CSS, shadcn/ui components
-- **Backend**: Supabase (PostgreSQL, RLS)
+- **Backend**: Supabase Cloud (PostgreSQL, RLS) — NON Docker locale
 - **State Management**: TanStack Query (React Query)
 - **Forms**: React Hook Form + Zod validation
 
@@ -14,8 +14,7 @@ Sistema gestionale per Property Manager specializzato in affitti brevi. Gestisce
 ```bash
 npm run dev          # Avvia dev server (localhost:3000)
 npm run build        # Build produzione
-npx supabase start   # Avvia Supabase locale
-npx supabase db reset # Reset DB con migrazioni e seed
+# DB è su Supabase Cloud — le migrazioni vanno applicate manualmente via SQL Editor o npx supabase db push
 ```
 
 ## Configurazione

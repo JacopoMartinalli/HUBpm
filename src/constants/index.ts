@@ -1,35 +1,31 @@
 // ============================================
-// FASI E PIPELINE
+// FASI E PIPELINE (Sistema Semplificato)
 // ============================================
 
+// Lead: Solo qualifica iniziale (L0 → L1), poi si passa alla proprietà
 export const FASI_LEAD = [
-  { id: 'L0', label: 'Nuovo Lead', description: 'Lead appena entrato nel sistema', color: 'bg-gray-100', textColor: 'text-gray-700' },
-  { id: 'L1', label: 'Contattato', description: 'Prima chiamata effettuata, interesse verificato', color: 'bg-blue-100', textColor: 'text-blue-700' },
-  { id: 'L2', label: 'In Valutazione', description: 'Raccolta info, sopralluogo in corso', color: 'bg-indigo-100', textColor: 'text-indigo-700' },
-  { id: 'L3', label: 'Qualificato', description: 'Pronto per conversione a cliente', color: 'bg-green-100', textColor: 'text-green-700' },
+  { id: 'L0', label: 'Nuovo', description: 'Lead appena entrato, da contattare', color: 'bg-gray-100', textColor: 'text-gray-700' },
+  { id: 'L1', label: 'Qualificato', description: 'Contattato e interessato, pronto per proprietà', color: 'bg-green-100', textColor: 'text-green-700' },
 ] as const
 
+// DEPRECATO: Proprietà Lead non più usate, gestite direttamente come Proprietà
 export const FASI_PROPRIETA_LEAD = [
   { id: 'PL0', label: 'Registrata', description: 'Dati base proprietà inseriti', color: 'bg-gray-100', textColor: 'text-gray-700' },
-  { id: 'PL1', label: 'Info Raccolte', description: 'Foto, planimetrie, caratteristiche complete', color: 'bg-blue-100', textColor: 'text-blue-700' },
-  { id: 'PL2', label: 'Sopralluogo', description: 'Visita effettuata, valutazione tecnica', color: 'bg-indigo-100', textColor: 'text-indigo-700' },
-  { id: 'PL3', label: 'Valutata', description: 'Analisi completata, pronta per proposta', color: 'bg-green-100', textColor: 'text-green-700' },
 ] as const
 
+// DEPRECATO: Cliente è uno stato derivato (ha proprietà in P3+), non una pipeline separata
 export const FASI_CLIENTE = [
-  { id: 'C0', label: 'Onboarding', description: 'Raccolta documenti, setup sistemi', color: 'bg-blue-100', textColor: 'text-blue-700' },
-  { id: 'C1', label: 'Servizi', description: 'Erogazione servizi acquistati', color: 'bg-indigo-100', textColor: 'text-indigo-700' },
-  { id: 'C2', label: 'Attivo', description: 'Cliente operativo', color: 'bg-green-100', textColor: 'text-green-700' },
-  { id: 'C3', label: 'Cessato', description: 'Rapporto concluso', color: 'bg-gray-100', textColor: 'text-gray-700' },
+  { id: 'C0', label: 'Attivo', description: 'Cliente con proprietà in gestione', color: 'bg-green-100', textColor: 'text-green-700' },
 ] as const
 
+// Proprietà: Pipeline principale del business
 export const FASI_PROPRIETA = [
-  { id: 'P0', label: 'Onboarding', description: 'Raccolta documenti proprietà', color: 'bg-gray-100', textColor: 'text-gray-700' },
-  { id: 'P1', label: 'Setup Legale', description: 'SCIA, CIR, CIN, Alloggiati', color: 'bg-blue-100', textColor: 'text-blue-700' },
-  { id: 'P2', label: 'Setup Operativo', description: 'Foto, annunci, channel manager', color: 'bg-indigo-100', textColor: 'text-indigo-700' },
-  { id: 'P3', label: 'Go-Live', description: 'Attivazione annunci, test', color: 'bg-purple-100', textColor: 'text-purple-700' },
-  { id: 'P4', label: 'Operativa', description: 'Gestione quotidiana attiva', color: 'bg-green-100', textColor: 'text-green-700' },
-  { id: 'P5', label: 'Cessata', description: 'Proprietà non più gestita', color: 'bg-gray-100', textColor: 'text-gray-500' },
+  { id: 'P0', label: 'Valutazione', description: 'Sopralluogo e analisi fattibilità', color: 'bg-gray-100', textColor: 'text-gray-700' },
+  { id: 'P1', label: 'Proposta', description: 'Proposta commerciale in preparazione/inviata', color: 'bg-blue-100', textColor: 'text-blue-700' },
+  { id: 'P2', label: 'Onboarding', description: 'Proposta accettata, raccolta documenti', color: 'bg-indigo-100', textColor: 'text-indigo-700' },
+  { id: 'P3', label: 'Setup', description: 'Pratiche legali, foto, annunci OTA', color: 'bg-purple-100', textColor: 'text-purple-700' },
+  { id: 'P4', label: 'Operativa', description: 'Live e in gestione attiva', color: 'bg-green-100', textColor: 'text-green-700' },
+  { id: 'P5', label: 'Cessata', description: 'Non più in gestione', color: 'bg-gray-100', textColor: 'text-gray-500' },
 ] as const
 
 // ============================================
@@ -116,6 +112,21 @@ export const TIPOLOGIE_PROPRIETA = [
   { id: 'bilocale', label: 'Bilocale' },
   { id: 'trilocale', label: 'Trilocale' },
   { id: 'casa_vacanze', label: 'Casa Vacanze' },
+  { id: 'altro', label: 'Altro' },
+] as const
+
+export const STATI_SOPRALLUOGO = [
+  { id: 'da_programmare', label: 'Da programmare', color: 'bg-gray-100 text-gray-800' },
+  { id: 'programmato', label: 'Programmato', color: 'bg-yellow-100 text-yellow-800' },
+  { id: 'effettuato', label: 'Effettuato', color: 'bg-green-100 text-green-800' },
+] as const
+
+export const CATEGORIE_FOTO = [
+  { id: 'esterno', label: 'Esterno' },
+  { id: 'soggiorno', label: 'Soggiorno' },
+  { id: 'camera', label: 'Camera' },
+  { id: 'bagno', label: 'Bagno' },
+  { id: 'cucina', label: 'Cucina' },
   { id: 'altro', label: 'Altro' },
 ] as const
 
@@ -288,13 +299,14 @@ export function getEsitoColor(esiti: readonly { id: string; color: string }[], i
 // ============================================
 
 export const CATEGORIE_TEMPLATE = [
-  { id: 'preventivo', label: 'Preventivo', icon: '💰', description: 'Preventivo servizi con prezzi' },
-  { id: 'proposta', label: 'Proposta Commerciale', icon: '📋', description: 'Proposta commerciale completa' },
-  { id: 'contratto', label: 'Contratto', icon: '📝', description: 'Contratto di gestione' },
-  { id: 'privacy', label: 'Privacy', icon: '🔒', description: 'Informativa privacy GDPR' },
-  { id: 'mandato', label: 'Mandato', icon: '🤝', description: 'Mandato di gestione' },
-  { id: 'lettera', label: 'Lettera', icon: '✉️', description: 'Lettera generica' },
-  { id: 'report', label: 'Report', icon: '📊', description: 'Report periodico' },
+  { id: 'preventivo', label: 'Preventivo', icon: '💰', description: 'PDF preventivo da firmare e allegare' },
+  { id: 'proposta', label: 'Proposta Commerciale', icon: '📋', description: 'Email di accompagnamento al preventivo' },
+  { id: 'contratto', label: 'Contratto', icon: '📝', description: 'Contratto di gestione immobiliare' },
+  { id: 'mandato_pf', label: 'Mandato Persona Fisica', icon: '🤝', description: 'Mandato di rappresentanza per persona fisica' },
+  { id: 'mandato_pg', label: 'Mandato Persona Giuridica', icon: '🏢', description: 'Mandato di rappresentanza per società' },
+  { id: 'procura', label: 'Procura', icon: '📜', description: 'Procura allegata al mandato' },
+  { id: 'elenco_dotazioni', label: 'Elenco Dotazioni', icon: '🛋️', description: 'Inventario dotazioni della proprietà' },
+  { id: 'report_mensile', label: 'Report Mensile', icon: '📊', description: 'Report periodico attività e risultati' },
 ] as const
 
 export const STATI_DOCUMENTO_GENERATO = [

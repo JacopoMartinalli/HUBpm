@@ -42,7 +42,8 @@ export function getInitials(nome: string, cognome: string): string {
   return `${nome.charAt(0)}${cognome.charAt(0)}`.toUpperCase()
 }
 
-export function getFullName(nome: string, cognome: string): string {
+export function getFullName(nome: string, cognome: string, ragioneSociale?: string | null): string {
+  if (ragioneSociale) return ragioneSociale
   return `${nome} ${cognome}`
 }
 

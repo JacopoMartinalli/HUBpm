@@ -167,6 +167,61 @@ export function useDeleteDocumento() {
   })
 }
 
+// Upload file per un documento
+export function useUploadDocumentoFile() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({ documentoId, contattoId, proprietaId, file }: {
+      documentoId: string
+      contattoId?: string | null
+      proprietaId?: string | null
+      file: File
+    }) => {
+      // Upload to storage
+      const ext = file.name.split('.').pop()
+      const path = `${contattoId || proprietaId}/${documentoId}.${ext}`
+
+      const { error: uploadError } = await supabase.storage
+        .from('documenti')
+        .upload(path, file, { upsert: true })
+
+      if (uploadError) throw uploadError
+
+      // Get public URL
+      const { data: urlData } = supabase.storage
+        .from('documenti')
+        .getPublicUrl(path)
+
+      // Update documento record
+      const { data, error } = await supabase
+        .from('documenti')
+        .update({
+          file_url: urlData.publicUrl,
+          file_name: file.name,
+          file_size: file.size,
+          data_caricamento: new Date().toISOString(),
+          stato: 'ricevuto' as const,
+        })
+        .eq('id', documentoId)
+        .select()
+        .single()
+
+      if (error) throw error
+      return data as Documento
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: documentiKeys.detail(data.id) })
+      if (data.contatto_id) {
+        queryClient.invalidateQueries({ queryKey: documentiKeys.listByContatto(data.contatto_id) })
+      }
+      if (data.proprieta_id) {
+        queryClient.invalidateQueries({ queryKey: documentiKeys.listByProprieta(data.proprieta_id) })
+      }
+    },
+  })
+}
+
 // Genera documenti da template per un'entità
 export function useGeneraDocumentiDaTemplate() {
   const queryClient = useQueryClient()
@@ -179,17 +234,22 @@ export function useGeneraDocumentiDaTemplate() {
       proprietaId,
     }: {
       tipoEntita: 'cliente' | 'proprieta'
-      fase: string
+      fase?: string
       contattoId?: string
       proprietaId?: string
     }) => {
-      // Ottieni template per questa fase
-      const { data: templates, error: templateError } = await supabase
+      // Ottieni template per questa entità (opzionalmente filtrati per fase)
+      let query = supabase
         .from('template_documenti')
         .select('*')
         .eq('tenant_id', DEFAULT_TENANT_ID)
         .eq('tipo_entita', tipoEntita)
-        .eq('fase', fase)
+
+      if (fase) {
+        query = query.eq('fase', fase)
+      }
+
+      const { data: templates, error: templateError } = await query
 
       if (templateError) throw templateError
 
