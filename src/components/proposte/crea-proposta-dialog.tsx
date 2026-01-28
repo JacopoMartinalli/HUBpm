@@ -34,7 +34,10 @@ import {
   useCreateProposta,
   useAddPropostaItem
 } from '@/lib/hooks'
-import type { PacchettoServizio, CatalogoServizio } from '@/types/database'
+import { useCreateDocumentoGenerato } from '@/lib/hooks/useDocumentiGenerati'
+import { supabase, DEFAULT_TENANT_ID } from '@/lib/supabase'
+import type { PacchettoServizio, CatalogoServizio, CategoriaTemplate } from '@/types/database'
+import { toast } from 'sonner'
 
 interface CreaPropostaDialogProps {
   open: boolean
@@ -74,6 +77,129 @@ export function CreaPropostaDialog({
 
   const createProposta = useCreateProposta()
   const addItem = useAddPropostaItem()
+  const createDocumento = useCreateDocumentoGenerato()
+
+  // Funzione per recuperare il template predefinito di una categoria
+  const getDefaultTemplate = async (categoria: CategoriaTemplate) => {
+    const { data, error } = await supabase
+      .from('document_templates')
+      .select('*')
+      .eq('tenant_id', DEFAULT_TENANT_ID)
+      .eq('categoria', categoria)
+      .eq('attivo', true)
+      .order('predefinito', { ascending: false })
+      .limit(1)
+      .single()
+
+    if (error) return null
+    return data
+  }
+
+  // Funzione per generare documenti automaticamente
+  const generaDocumentiAutomatici = async (
+    propostaId: string,
+    propostaNumero: string,
+    contattoId: string,
+    proprietaId: string,
+    items: SelectedItem[],
+    subtotale: number,
+    scontoPerc: number,
+    scontoFissoVal: number,
+    totale: number
+  ) => {
+    const categorieDaGenerare: CategoriaTemplate[] = ['proposta', 'preventivo']
+
+    for (const categoria of categorieDaGenerare) {
+      const template = await getDefaultTemplate(categoria)
+
+      if (!template) {
+        console.warn(`Nessun template attivo trovato per categoria: ${categoria}`)
+        continue
+      }
+
+      try {
+        // Recupera i dati del contatto per lo snapshot
+        const { data: contatto } = await supabase
+          .from('contatti')
+          .select('nome, cognome, email, telefono, indirizzo, citta, cap, codice_fiscale, partita_iva')
+          .eq('id', contattoId)
+          .single()
+
+        // Recupera i dati della proprietà per lo snapshot
+        const { data: proprieta } = await supabase
+          .from('proprieta')
+          .select('nome, indirizzo, citta, tipologia')
+          .eq('id', proprietaId)
+          .single()
+
+        // Recupera i dati dell'azienda
+        const { data: azienda } = await supabase
+          .from('property_managers')
+          .select('nome_commerciale, ragione_sociale, email, telefono')
+          .eq('tenant_id', DEFAULT_TENANT_ID)
+          .single()
+
+        const categoriaLabel = categoria === 'proposta' ? 'Proposta Commerciale' : 'Preventivo'
+        const titoloDocumento = proprieta?.nome
+          ? `${categoriaLabel} - ${proprieta.nome}`
+          : contatto
+            ? `${categoriaLabel} - ${contatto.nome} ${contatto.cognome}`
+            : categoriaLabel
+
+        await createDocumento.mutateAsync({
+          template_id: template.id,
+          template_nome: template.nome,
+          template_versione: template.versione,
+          contatto_id: contattoId,
+          proprieta_id: proprietaId,
+          proposta_id: propostaId,
+          titolo: titoloDocumento,
+          categoria: categoria,
+          stato: 'generato',
+          data_generazione: new Date().toISOString(),
+          dati_snapshot: {
+            cliente: contatto ? {
+              nome: contatto.nome,
+              cognome: contatto.cognome,
+              email: contatto.email,
+              telefono: contatto.telefono,
+              indirizzo: contatto.indirizzo,
+              citta: contatto.citta,
+              cap: contatto.cap,
+              codice_fiscale: contatto.codice_fiscale,
+              partita_iva: contatto.partita_iva,
+            } : null,
+            proprieta: proprieta ? {
+              nome: proprieta.nome,
+              indirizzo: proprieta.indirizzo,
+              citta: proprieta.citta,
+              tipologia: proprieta.tipologia,
+            } : null,
+            proposta: {
+              numero: propostaNumero,
+              totale: totale,
+              subtotale: subtotale,
+              sconto: subtotale * (scontoPerc / 100) + scontoFissoVal,
+              items: items.map(item => ({
+                nome: item.nome,
+                descrizione: item.descrizione,
+                quantita: item.quantita,
+                prezzo_unitario: item.prezzo,
+                prezzo_totale: item.prezzo * item.quantita,
+              })),
+            },
+            azienda: azienda ? {
+              nome: azienda.nome_commerciale || azienda.ragione_sociale,
+              email: azienda.email,
+              telefono: azienda.telefono,
+            } : null,
+          },
+        })
+      } catch (error) {
+        console.error(`Errore generazione documento ${categoria}:`, error)
+      }
+    }
+  }
 
   // Filtra servizi vendibili singolarmente
   const serviziSingoli = useMemo(() => {
@@ -159,6 +285,25 @@ export function CreaPropostaDialog({
           prezzo_totale: item.prezzo * item.quantita,
           ordine: i
         })
+      }
+
+      // 3. Genera automaticamente i documenti (Proposta Commerciale + Preventivo)
+      try {
+        await generaDocumentiAutomatici(
+          proposta.id,
+          proposta.numero || '',
+          contattoId,
+          proprietaId,
+          selectedItems,
+          subtotale,
+          scontoPercValue,
+          scontoFissoValue,
+          totale
+        )
+        toast.success('Proposta creata con documenti generati')
+      } catch (docError) {
+        console.error('Errore generazione documenti:', docError)
+        toast.warning('Proposta creata, ma alcuni documenti non sono stati generati')
       }
 
       // Reset e chiudi
