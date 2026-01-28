@@ -14,6 +14,7 @@ import {
   DocumentiList,
   ConfirmDialog,
 } from '@/components/shared'
+import { ProposteProprietaView } from '@/components/proposte'
 import {
   useContatto,
   useProprietaList,
@@ -138,6 +139,7 @@ export default function ClienteDetailPage() {
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         <TabsList>
           <TabsTrigger value="panoramica">Panoramica</TabsTrigger>
+          <TabsTrigger value="proposte">Proposte</TabsTrigger>
           <TabsTrigger value="info">Anagrafica</TabsTrigger>
           <TabsTrigger value="documenti">Documenti</TabsTrigger>
         </TabsList>
@@ -297,6 +299,46 @@ export default function ClienteDetailPage() {
                       Aggiungi Proprietà
                     </Link>
                   </Button>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="proposte">
+          <div className="space-y-6">
+            {proprieta && proprieta.length > 0 ? (
+              proprieta.map((prop) => (
+                <Card key={prop.id}>
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-lg flex items-center gap-2">
+                        <Home className="h-5 w-5 text-muted-foreground" />
+                        <Link href={`/proprieta/${prop.id}`} className="hover:underline">
+                          {prop.nome}
+                        </Link>
+                      </CardTitle>
+                      <FaseBadge fase={prop.fase} tipo="proprieta" />
+                    </div>
+                    <p className="text-sm text-muted-foreground">{prop.indirizzo}, {prop.citta}</p>
+                  </CardHeader>
+                  <CardContent>
+                    <ProposteProprietaView
+                      proprietaId={prop.id}
+                      contattoId={cliente.id}
+                      proprietaNome={prop.nome}
+                      faseProprieta={prop.fase}
+                    />
+                  </CardContent>
+                </Card>
+              ))
+            ) : (
+              <Card>
+                <CardContent className="py-12 text-center">
+                  <Building2 className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-muted-foreground">
+                    Nessuna proprietà associata — le proposte vengono create per proprietà
+                  </p>
                 </CardContent>
               </Card>
             )}

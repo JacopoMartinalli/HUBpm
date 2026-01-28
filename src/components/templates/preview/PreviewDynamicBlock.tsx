@@ -5,6 +5,7 @@ import { BLOCCHI_TEMPLATE } from '@/constants'
 interface PreviewDynamicBlockProps {
     blockType: string
     config: Record<string, unknown>
+    resolvedData?: Record<string, unknown>
 }
 
 // Map blocchi per accesso rapido
@@ -13,56 +14,111 @@ const BLOCK_MAP = BLOCCHI_TEMPLATE.reduce((acc, block) => {
     return acc
 }, {} as Record<string, typeof BLOCCHI_TEMPLATE[number]>)
 
-// Render block content as it would appear in the final PDF
-function renderBlockContent(blockType: string, config: Record<string, unknown>): React.ReactNode {
+// Fallback examples when no real data
+const FALLBACK = {
+    header: { nome: 'Property Manager Srl', indirizzo: 'Via Roma 1, 20100 Milano', email: 'info@pm.it', telefono: '+39 02 1234567', piva: '12345678901', logoUrl: '' },
+    cliente: { nome: 'Mario Rossi', indirizzo: 'Via Lago 5, 22017 Menaggio (CO)', email: 'mario@example.com', telefono: '+39 333 1234567', cf: 'RSSMRA80A01F205X', piva: '' },
+    proprieta: { nome: 'Villa Belvedere', indirizzo: 'Via Lago 5, 22017 Menaggio (CO)', mq: '150', camere: '3', bagni: '2', maxOspiti: '6', cir: '013157-CNI-00123', cin: 'IT013157A1B2C3D4E5' },
+    totali: { subtotale: '€ 1.000,00', totale: '€ 1.220,00', sconto: '' },
+}
+
+function d(resolved: Record<string, unknown> | undefined, fallback: Record<string, unknown>): Record<string, unknown> {
+    // If resolved data exists and has at least one non-empty value, use it
+    if (resolved && Object.values(resolved).some(v => v != null && v !== '')) {
+        return resolved
+    }
+    return fallback
+}
+
+function renderBlockContent(blockType: string, config: Record<string, unknown>, resolvedData?: Record<string, unknown>): React.ReactNode {
     switch (blockType) {
-        case 'header':
+        case 'header': {
+            const data = d(resolvedData, FALLBACK.header)
+            const isFallback = !resolvedData || !Object.values(resolvedData).some(v => v != null && v !== '')
+            const cls = isFallback ? 'text-amber-600' : ''
             return (
                 <div className="mb-6">
                     <div className="flex items-start gap-4">
-                        <div className="w-16 h-16 bg-gray-100 rounded flex items-center justify-center text-gray-400 text-xs border">
-                            LOGO
-                        </div>
+                        {config.showLogo !== false && (
+                            data.logoUrl ? (
+                                // eslint-disable-next-line @next/next/no-img-element
+                                <img src={data.logoUrl as string} alt="Logo" className="w-16 h-16 object-contain" />
+                            ) : (
+                                <div className="w-16 h-16 bg-gray-100 rounded flex items-center justify-center text-gray-400 text-xs border">LOGO</div>
+                            )
+                        )}
                         <div>
-                            <div className="text-xl font-bold text-gray-900">Property Manager Srl</div>
-                            <div className="text-gray-600">Via Roma 1, 20100 Milano</div>
+                            <div className={`text-xl font-bold text-gray-900 ${cls}`}>{data.nome as string}</div>
+                            {config.showAddress !== false && <div className={`text-gray-600 ${cls}`}>{data.indirizzo as string}</div>}
                             {config.showContacts !== false && (
-                                <div className="text-gray-500 text-sm mt-1">
-                                    info@pm.it • +39 02 1234567
+                                <div className={`text-gray-500 text-sm mt-1 ${cls}`}>
+                                    {[data.email, data.telefono].filter(Boolean).join(' • ')}
                                 </div>
+                            )}
+                            {config.showPiva !== false && data.piva && (
+                                <div className={`text-gray-500 text-sm ${cls}`}>P.IVA {data.piva as string}</div>
                             )}
                         </div>
                     </div>
                 </div>
             )
+        }
 
-        case 'cliente':
+        case 'cliente': {
+            const data = d(resolvedData, FALLBACK.cliente)
+            const isFallback = !resolvedData || !Object.values(resolvedData).some(v => v != null && v !== '')
+            const cls = isFallback ? 'text-amber-600' : ''
             return (
                 <div className="mb-4">
                     <div className="text-sm text-gray-500 mb-1">Destinatario:</div>
-                    <div className="font-semibold text-gray-900">Mario Rossi</div>
-                    {config.showAddress !== false && (
-                        <div className="text-gray-600">Via Lago 5, 22017 Menaggio (CO)</div>
+                    <div className={`font-semibold text-gray-900 ${cls}`}>{data.nome as string}</div>
+                    {config.showAddress !== false && data.indirizzo && (
+                        <div className={`text-gray-600 ${cls}`}>{data.indirizzo as string}</div>
                     )}
                     {config.showContacts !== false && (
-                        <div className="text-gray-500 text-sm">mario@example.com • +39 333 1234567</div>
+                        <div className={`text-gray-500 text-sm ${cls}`}>
+                            {[data.email, data.telefono].filter(Boolean).join(' • ')}
+                        </div>
+                    )}
+                    {config.showCf !== false && data.cf && (
+                        <div className={`text-gray-500 text-sm ${cls}`}>C.F. {data.cf as string}</div>
+                    )}
+                    {config.showPiva !== false && data.piva && (
+                        <div className={`text-gray-500 text-sm ${cls}`}>P.IVA {data.piva as string}</div>
                     )}
                 </div>
             )
+        }
 
-        case 'proprieta':
+        case 'proprieta': {
+            const data = d(resolvedData, FALLBACK.proprieta)
+            const isFallback = !resolvedData || !Object.values(resolvedData).some(v => v != null && v !== '')
+            const cls = isFallback ? 'text-amber-600' : ''
             return (
                 <div className="mb-4">
                     <div className="text-sm text-gray-500 mb-1">Proprietà:</div>
-                    <div className="font-semibold text-gray-900">Villa Belvedere</div>
-                    {config.showAddress !== false && (
-                        <div className="text-gray-600">Via Lago 5, 22017 Menaggio (CO)</div>
+                    <div className={`font-semibold text-gray-900 ${cls}`}>{data.nome as string}</div>
+                    {config.showAddress !== false && data.indirizzo && (
+                        <div className={`text-gray-600 ${cls}`}>{data.indirizzo as string}</div>
                     )}
                     {config.showDetails !== false && (
-                        <div className="text-gray-500 text-sm">150 mq • 3 camere • 2 bagni • Max 6 ospiti</div>
+                        <div className={`text-gray-500 text-sm ${cls}`}>
+                            {[
+                                data.mq ? `${data.mq} mq` : null,
+                                data.camere ? `${data.camere} camere` : null,
+                                data.bagni ? `${data.bagni} bagni` : null,
+                                data.maxOspiti ? `Max ${data.maxOspiti} ospiti` : null,
+                            ].filter(Boolean).join(' • ')}
+                        </div>
+                    )}
+                    {config.showCodes !== false && (data.cir || data.cin) && (
+                        <div className={`text-gray-500 text-sm ${cls}`}>
+                            {[data.cir ? `CIR: ${data.cir}` : null, data.cin ? `CIN: ${data.cin}` : null].filter(Boolean).join(' • ')}
+                        </div>
                     )}
                 </div>
             )
+        }
 
         case 'serviziTabella':
             return (
@@ -79,31 +135,34 @@ function renderBlockContent(blockType: string, config: Record<string, unknown>):
                         </thead>
                         <tbody>
                             <tr>
-                                <td className="p-3 border border-gray-200">Setup Iniziale</td>
+                                <td className="p-3 border border-gray-200 text-amber-600">Setup Iniziale</td>
                                 {config.showQuantity !== false && (
-                                    <td className="text-center p-3 border border-gray-200">1</td>
+                                    <td className="text-center p-3 border border-gray-200 text-amber-600">1</td>
                                 )}
-                                <td className="text-right p-3 border border-gray-200">€ 500,00</td>
+                                <td className="text-right p-3 border border-gray-200 text-amber-600">€ 500,00</td>
                             </tr>
                             <tr>
-                                <td className="p-3 border border-gray-200">Gestione Mensile</td>
+                                <td className="p-3 border border-gray-200 text-amber-600">Gestione Mensile</td>
                                 {config.showQuantity !== false && (
-                                    <td className="text-center p-3 border border-gray-200">12</td>
+                                    <td className="text-center p-3 border border-gray-200 text-amber-600">12</td>
                                 )}
-                                <td className="text-right p-3 border border-gray-200">20%</td>
+                                <td className="text-right p-3 border border-gray-200 text-amber-600">20%</td>
                             </tr>
                         </tbody>
                     </table>
                 </div>
             )
 
-        case 'totali':
+        case 'totali': {
+            const data = d(resolvedData, FALLBACK.totali)
+            const isFallback = !resolvedData || !Object.values(resolvedData).some(v => v != null && v !== '')
+            const cls = isFallback ? 'text-amber-600' : ''
             return (
                 <div className="my-4 ml-auto w-64">
                     {config.showSubtotale !== false && (
-                        <div className="flex justify-between py-1 text-gray-600">
+                        <div className={`flex justify-between py-1 text-gray-600 ${cls}`}>
                             <span>Subtotale:</span>
-                            <span>€ 1.000,00</span>
+                            <span>{data.subtotale as string || '€ 1.000,00'}</span>
                         </div>
                     )}
                     {config.showIva !== false && (
@@ -112,20 +171,22 @@ function renderBlockContent(blockType: string, config: Record<string, unknown>):
                             <span>€ 220,00</span>
                         </div>
                     )}
-                    <div className="flex justify-between py-2 mt-1 border-t-2 border-gray-900 font-bold text-lg">
+                    <div className={`flex justify-between py-2 mt-1 border-t-2 border-gray-900 font-bold text-lg ${cls}`}>
                         <span>Totale:</span>
-                        <span>€ 1.220,00</span>
+                        <span>{data.totale as string || '€ 1.220,00'}</span>
                     </div>
                 </div>
             )
+        }
 
-        case 'validita':
+        case 'validita': {
             const days = (config.days as number) || 30
             return (
                 <div className="my-4 text-gray-600 italic">
                     Questa proposta è valida per {days} giorni dalla data di emissione.
                 </div>
             )
+        }
 
         case 'termini':
             return (
@@ -137,7 +198,7 @@ function renderBlockContent(blockType: string, config: Record<string, unknown>):
                 </div>
             )
 
-        case 'firme':
+        case 'firme': {
             const leftLabel = (config.leftLabel as string) || 'Il Fornitore'
             const rightLabel = (config.rightLabel as string) || 'Il Cliente'
             return (
@@ -152,8 +213,9 @@ function renderBlockContent(blockType: string, config: Record<string, unknown>):
                     </div>
                 </div>
             )
+        }
 
-        case 'note':
+        case 'note': {
             const noteStyles: Record<string, string> = {
                 warning: 'bg-yellow-50 border-l-4 border-yellow-400',
                 info: 'bg-blue-50 border-l-4 border-blue-400',
@@ -166,8 +228,9 @@ function renderBlockContent(blockType: string, config: Record<string, unknown>):
                     <div className="text-gray-700">Nota importante da compilare...</div>
                 </div>
             )
+        }
 
-        case 'separatore':
+        case 'separatore': {
             const lineStyles: Record<string, string> = {
                 solid: 'border-solid',
                 dashed: 'border-dashed',
@@ -176,13 +239,14 @@ function renderBlockContent(blockType: string, config: Record<string, unknown>):
             }
             const lineStyle = (config.style as string) || 'solid'
             return <hr className={`my-6 border-gray-300 ${lineStyles[lineStyle] || lineStyles.solid}`} />
+        }
 
         default:
             return null
     }
 }
 
-export function PreviewDynamicBlock({ blockType, config }: PreviewDynamicBlockProps) {
+export function PreviewDynamicBlock({ blockType, config, resolvedData }: PreviewDynamicBlockProps) {
     const blockInfo = BLOCK_MAP[blockType]
 
     if (!blockInfo) {
@@ -193,6 +257,5 @@ export function PreviewDynamicBlock({ blockType, config }: PreviewDynamicBlockPr
         )
     }
 
-    // Render directly as PDF content, no wrapper or placeholder styling
-    return <>{renderBlockContent(blockType, config)}</>
+    return <>{renderBlockContent(blockType, config, resolvedData)}</>
 }

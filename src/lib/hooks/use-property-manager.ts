@@ -55,6 +55,11 @@ type PropertyManagerFormInput = {
   intestatario_conto?: string | null
   logo_url?: string | null
   colore_primario?: string | null
+  colore_secondario?: string | null
+  font_titoli?: string | null
+  font_corpo?: string | null
+  intestazione_json?: Record<string, unknown> | null
+  pie_pagina_json?: Record<string, unknown> | null
   note?: string | null
 }
 

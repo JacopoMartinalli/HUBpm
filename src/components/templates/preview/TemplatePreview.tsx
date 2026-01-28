@@ -3,10 +3,18 @@
 import { useMemo } from 'react'
 import { PreviewVariable } from './PreviewVariable'
 import { PreviewDynamicBlock } from './PreviewDynamicBlock'
+import type { TemplateContext } from '@/lib/services/template-resolver'
+import { resolveVariable, resolveBlockData } from '@/lib/services/template-resolver'
+import { getDefaultIntestazione, getDefaultPiePagina } from '@/lib/default-header-footer'
 
 interface TemplatePreviewProps {
     content: Record<string, unknown>
+    context?: TemplateContext
     className?: string
+    fontTitoli?: string
+    fontCorpo?: string
+    /** Mostra intestazione e piè di pagina (solo per PDF A4) */
+    showHeaderFooter?: boolean
 }
 
 interface TipTapNode {
@@ -45,29 +53,30 @@ function renderMarks(text: string, marks?: Array<{ type: string; attrs?: Record<
 }
 
 // Renderizza ricorsivamente i nodi TipTap
-function RenderNode({ node, index }: { node: TipTapNode; index: number }): React.ReactNode {
+function RenderNode({ node, index, context, fontTitoli }: { node: TipTapNode; index: number; context?: TemplateContext; fontTitoli?: string }): React.ReactNode {
     switch (node.type) {
         case 'doc':
             return (
                 <div className="template-preview-content">
                     {node.content?.map((child, i) => (
-                        <RenderNode key={i} node={child} index={i} />
+                        <RenderNode key={i} node={child} index={i} context={context} fontTitoli={fontTitoli} />
                     ))}
                 </div>
             )
 
-        case 'paragraph':
+        case 'paragraph': {
             const textAlign = node.attrs?.textAlign as string
             const alignClass = textAlign ? `text-${textAlign}` : ''
             return (
                 <p className={`mb-3 ${alignClass}`} key={index}>
                     {node.content?.map((child, i) => (
-                        <RenderNode key={i} node={child} index={i} />
+                        <RenderNode key={i} node={child} index={i} context={context} fontTitoli={fontTitoli} />
                     )) || <br />}
                 </p>
             )
+        }
 
-        case 'heading':
+        case 'heading': {
             const level = (node.attrs?.level as number) || 1
             const headingAlign = node.attrs?.textAlign as string
             const headingAlignClass = headingAlign ? `text-${headingAlign}` : ''
@@ -78,12 +87,13 @@ function RenderNode({ node, index }: { node: TipTapNode; index: number }): React
                 3: 'text-lg font-medium mb-2',
             }
             return (
-                <Tag className={`${sizeClasses[level] || sizeClasses[1]} ${headingAlignClass}`} key={index}>
+                <Tag className={`${sizeClasses[level] || sizeClasses[1]} ${headingAlignClass}`} key={index} style={fontTitoli ? { fontFamily: fontTitoli } : undefined}>
                     {node.content?.map((child, i) => (
-                        <RenderNode key={i} node={child} index={i} />
+                        <RenderNode key={i} node={child} index={i} context={context} fontTitoli={fontTitoli} />
                     ))}
                 </Tag>
             )
+        }
 
         case 'text':
             return renderMarks(node.text || '', node.marks)
@@ -92,7 +102,7 @@ function RenderNode({ node, index }: { node: TipTapNode; index: number }): React
             return (
                 <ul className="list-disc list-inside mb-3 space-y-1" key={index}>
                     {node.content?.map((child, i) => (
-                        <RenderNode key={i} node={child} index={i} />
+                        <RenderNode key={i} node={child} index={i} context={context} fontTitoli={fontTitoli} />
                     ))}
                 </ul>
             )
@@ -101,7 +111,7 @@ function RenderNode({ node, index }: { node: TipTapNode; index: number }): React
             return (
                 <ol className="list-decimal list-inside mb-3 space-y-1" key={index}>
                     {node.content?.map((child, i) => (
-                        <RenderNode key={i} node={child} index={i} />
+                        <RenderNode key={i} node={child} index={i} context={context} fontTitoli={fontTitoli} />
                     ))}
                 </ol>
             )
@@ -110,13 +120,12 @@ function RenderNode({ node, index }: { node: TipTapNode; index: number }): React
             return (
                 <li key={index}>
                     {node.content?.map((child, i) => {
-                        // Per list items, renderizziamo il contenuto inline
                         if (child.type === 'paragraph') {
                             return child.content?.map((c, j) => (
-                                <RenderNode key={j} node={c} index={j} />
+                                <RenderNode key={j} node={c} index={j} context={context} />
                             ))
                         }
-                        return <RenderNode key={i} node={child} index={i} />
+                        return <RenderNode key={i} node={child} index={i} context={context} fontTitoli={fontTitoli} />
                     })}
                 </li>
             )
@@ -125,7 +134,7 @@ function RenderNode({ node, index }: { node: TipTapNode; index: number }): React
             return (
                 <blockquote className="border-l-4 border-gray-300 pl-4 italic text-gray-600 mb-3" key={index}>
                     {node.content?.map((child, i) => (
-                        <RenderNode key={i} node={child} index={i} />
+                        <RenderNode key={i} node={child} index={i} context={context} fontTitoli={fontTitoli} />
                     ))}
                 </blockquote>
             )
@@ -137,32 +146,40 @@ function RenderNode({ node, index }: { node: TipTapNode; index: number }): React
             return <br key={index} />
 
         // Nodi custom per template
-        case 'variableMention':
+        case 'variableMention': {
+            const varId = node.attrs?.id as string
+            const resolved = context ? resolveVariable(varId, context) : null
             return (
                 <PreviewVariable
                     key={index}
-                    id={node.attrs?.id as string}
+                    id={varId}
                     label={node.attrs?.label as string}
                     categoria={node.attrs?.categoria as string}
+                    resolvedValue={resolved}
                 />
             )
+        }
 
-        case 'dynamicBlock':
+        case 'dynamicBlock': {
+            const blockType = node.attrs?.blockType as string
+            const config = (node.attrs?.config as Record<string, unknown>) || {}
+            const resolved = context ? resolveBlockData(blockType, context) : undefined
             return (
                 <PreviewDynamicBlock
                     key={index}
-                    blockType={node.attrs?.blockType as string}
-                    config={(node.attrs?.config as Record<string, unknown>) || {}}
+                    blockType={blockType}
+                    config={config}
+                    resolvedData={resolved}
                 />
             )
+        }
 
         default:
-            // Per nodi non riconosciuti, prova a renderizzare i figli
             if (node.content) {
                 return (
                     <div key={index}>
                         {node.content.map((child, i) => (
-                            <RenderNode key={i} node={child} index={i} />
+                            <RenderNode key={i} node={child} index={i} context={context} fontTitoli={fontTitoli} />
                         ))}
                     </div>
                 )
@@ -171,7 +188,7 @@ function RenderNode({ node, index }: { node: TipTapNode; index: number }): React
     }
 }
 
-export function TemplatePreview({ content, className = '' }: TemplatePreviewProps) {
+export function TemplatePreview({ content, context, className = '', fontTitoli, fontCorpo, showHeaderFooter = true }: TemplatePreviewProps) {
     const renderedContent = useMemo(() => {
         if (!content || Object.keys(content).length === 0) {
             return (
@@ -181,12 +198,40 @@ export function TemplatePreview({ content, className = '' }: TemplatePreviewProp
             )
         }
 
-        return <RenderNode node={content as TipTapNode} index={0} />
-    }, [content])
+        return <RenderNode node={content as TipTapNode} index={0} context={context} fontTitoli={fontTitoli} />
+    }, [content, context, fontTitoli])
+
+    // Header/footer from azienda settings, with defaults as fallback (only for PDF A4 documents)
+    const headerContent = showHeaderFooter
+        ? (context?.azienda?.intestazione_json || getDefaultIntestazione())
+        : null
+    const footerContent = showHeaderFooter
+        ? (context?.azienda?.pie_pagina_json || getDefaultPiePagina())
+        : null
+
+    const renderedHeader = useMemo(() => {
+        if (!headerContent || Object.keys(headerContent).length === 0) return null
+        return <RenderNode node={headerContent as TipTapNode} index={-1} context={context} fontTitoli={fontTitoli} />
+    }, [headerContent, context, fontTitoli])
+
+    const renderedFooter = useMemo(() => {
+        if (!footerContent || Object.keys(footerContent).length === 0) return null
+        return <RenderNode node={footerContent as TipTapNode} index={-2} context={context} fontTitoli={fontTitoli} />
+    }, [footerContent, context, fontTitoli])
 
     return (
         <div className={`template-preview prose prose-sm max-w-none ${className}`}>
+            {renderedHeader && (
+                <div className="template-header mb-6">
+                    {renderedHeader}
+                </div>
+            )}
             {renderedContent}
+            {renderedFooter && (
+                <div className="template-footer mt-6">
+                    {renderedFooter}
+                </div>
+            )}
         </div>
     )
 }

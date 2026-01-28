@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
-import { Save, Building2, User, Phone, CreditCard, Palette, Globe, Instagram, Facebook, Linkedin, Upload, X, ImageIcon } from 'lucide-react'
+import { Save, Building2, User, Phone, CreditCard, Palette, Globe, Instagram, Facebook, Linkedin, Upload, X, ImageIcon, FileText } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -13,9 +13,11 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { PageHeader, LoadingCard } from '@/components/shared'
-import { usePropertyManager, useUpsertPropertyManager } from '@/lib/hooks'
+import { getDefaultIntestazione, getDefaultPiePagina } from '@/lib/default-header-footer'
+import { usePropertyManager, useUpsertPropertyManager, useUpdatePropertyManager } from '@/lib/hooks'
 import { supabase, DEFAULT_TENANT_ID } from '@/lib/supabase'
 import { toast } from 'sonner'
+import { TemplateEditor } from '@/components/templates/editor/TemplateEditor'
 
 const FONT_OPTIONS = [
   { id: 'Inter', label: 'Inter' },
@@ -361,6 +363,10 @@ export default function PropertyManagerPage() {
               <TabsTrigger value="branding">
                 <Palette className="h-4 w-4 mr-2" />
                 Branding
+              </TabsTrigger>
+              <TabsTrigger value="intestazione">
+                <FileText className="h-4 w-4 mr-2" />
+                Intestazione & Piè di pagina
               </TabsTrigger>
             </TabsList>
 
@@ -1004,9 +1010,95 @@ export default function PropertyManagerPage() {
                 </CardContent>
               </Card>
             </TabsContent>
+
+            {/* Tab Intestazione & Piè di pagina */}
+            <TabsContent value="intestazione">
+              <HeaderFooterEditor propertyManager={propertyManager} />
+            </TabsContent>
           </Tabs>
         </form>
       </Form>
     </div>
   )
 }
+
+// ============================================
+// HEADER/FOOTER EDITOR (separato dal form principale perché gestisce JSON)
+// ============================================
+
+function HeaderFooterEditor({ propertyManager }: { propertyManager: ReturnType<typeof usePropertyManager>['data'] }) {
+  const updateMutation = useUpdatePropertyManager()
+  const [intestazione, setIntestazione] = useState<Record<string, unknown> | null>(null)
+  const [piePagina, setPiePagina] = useState<Record<string, unknown> | null>(null)
+  const [loaded, setLoaded] = useState(false)
+
+  useEffect(() => {
+    if (propertyManager && !loaded) {
+      setIntestazione(propertyManager.intestazione_json || getDefaultIntestazione())
+      setPiePagina(propertyManager.pie_pagina_json || getDefaultPiePagina())
+      setLoaded(true)
+    }
+  }, [propertyManager, loaded])
+
+  const handleSave = async () => {
+    if (!propertyManager?.id) return
+    try {
+      await updateMutation.mutateAsync({
+        id: propertyManager.id,
+        intestazione_json: intestazione,
+        pie_pagina_json: piePagina,
+      } as Parameters<typeof updateMutation.mutateAsync>[0])
+      toast.success('Intestazione e piè di pagina salvati')
+    } catch {
+      toast.error('Errore durante il salvataggio')
+    }
+  }
+
+  return (
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>Intestazione documento</CardTitle>
+          <CardDescription>
+            Appare automaticamente in cima a tutti i documenti generati (proposte, preventivi, contratti)
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {intestazione && (
+            <TemplateEditor
+              content={intestazione}
+              onChange={setIntestazione}
+              placeholder="Scrivi l'intestazione del documento... Es. logo, nome azienda, contatti"
+            />
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Piè di pagina</CardTitle>
+          <CardDescription>
+            Appare automaticamente in fondo a tutti i documenti generati
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {piePagina && (
+            <TemplateEditor
+              content={piePagina}
+              onChange={setPiePagina}
+              placeholder="Scrivi il piè di pagina... Es. P.IVA, contatti, indirizzo"
+            />
+          )}
+        </CardContent>
+      </Card>
+
+      <div className="flex justify-end">
+        <Button onClick={handleSave} disabled={updateMutation.isPending}>
+          <Save className="h-4 w-4 mr-2" />
+          {updateMutation.isPending ? 'Salvataggio...' : 'Salva intestazione e piè di pagina'}
+        </Button>
+      </div>
+    </div>
+  )
+}
+

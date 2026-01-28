@@ -984,6 +984,9 @@ export interface PropertyManager {
   colore_secondario: string | null
   font_titoli: string | null
   font_corpo: string | null
+  // Intestazione e piè di pagina documenti
+  intestazione_json: Record<string, unknown> | null
+  pie_pagina_json: Record<string, unknown> | null
   // Note
   note: string | null
   created_at: string
@@ -997,7 +1000,7 @@ export type PropertyManagerUpdate = Partial<PropertyManagerInsert>
 // DOCUMENT TEMPLATES (Sistema Template Dinamici)
 // ============================================
 
-export type CategoriaTemplate = 'preventivo' | 'proposta' | 'contratto' | 'mandato_pf' | 'mandato_pg' | 'procura' | 'elenco_dotazioni' | 'report_mensile'
+export type CategoriaTemplate = 'preventivo' | 'proposta' | 'mandato_pf' | 'mandato_pg' | 'procura' | 'elenco_dotazioni' | 'report_mensile'
 export type FormatoPagina = 'A4' | 'A5' | 'Letter'
 export type OrientamentoPagina = 'portrait' | 'landscape'
 export type StatoDocumentoGenerato = 'generato' | 'inviato' | 'visto' | 'firmato' | 'archiviato' | 'scaduto' | 'annullato'

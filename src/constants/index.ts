@@ -299,14 +299,13 @@ export function getEsitoColor(esiti: readonly { id: string; color: string }[], i
 // ============================================
 
 export const CATEGORIE_TEMPLATE = [
-  { id: 'preventivo', label: 'Preventivo', icon: '💰', description: 'PDF preventivo da firmare e allegare' },
-  { id: 'proposta', label: 'Proposta Commerciale', icon: '📋', description: 'Email di accompagnamento al preventivo' },
-  { id: 'contratto', label: 'Contratto', icon: '📝', description: 'Contratto di gestione immobiliare' },
-  { id: 'mandato_pf', label: 'Mandato Persona Fisica', icon: '🤝', description: 'Mandato di rappresentanza per persona fisica' },
-  { id: 'mandato_pg', label: 'Mandato Persona Giuridica', icon: '🏢', description: 'Mandato di rappresentanza per società' },
-  { id: 'procura', label: 'Procura', icon: '📜', description: 'Procura allegata al mandato' },
-  { id: 'elenco_dotazioni', label: 'Elenco Dotazioni', icon: '🛋️', description: 'Inventario dotazioni della proprietà' },
-  { id: 'report_mensile', label: 'Report Mensile', icon: '📊', description: 'Report periodico attività e risultati' },
+  { id: 'preventivo', label: 'Preventivo', icon: '💰', description: 'Preventivo servizi da inviare al cliente', formato_output: 'email' as const },
+  { id: 'proposta', label: 'Proposta Commerciale', icon: '📋', description: 'Proposta commerciale con dettaglio servizi', formato_output: 'email' as const },
+  { id: 'mandato_pf', label: 'Mandato Persona Fisica', icon: '🤝', description: 'Mandato di gestione per persona fisica', formato_output: 'pdf_a4' as const },
+  { id: 'mandato_pg', label: 'Mandato Persona Giuridica', icon: '🏢', description: 'Mandato di gestione per società', formato_output: 'pdf_a4' as const },
+  { id: 'procura', label: 'Procura', icon: '📜', description: 'Procura allegata al mandato', formato_output: 'pdf_a4' as const },
+  { id: 'elenco_dotazioni', label: 'Elenco Dotazioni', icon: '🛋️', description: 'Inventario dotazioni della proprietà', formato_output: 'pdf_a4' as const },
+  { id: 'report_mensile', label: 'Report Mensile', icon: '📊', description: 'Report periodico attività e risultati', formato_output: 'email' as const },
 ] as const
 
 export const STATI_DOCUMENTO_GENERATO = [

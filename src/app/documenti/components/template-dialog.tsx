@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -24,19 +24,22 @@ import {
 import { Switch } from '@/components/ui/switch'
 import { Badge } from '@/components/ui/badge'
 import { TemplateEditor } from '@/components/templates/editor'
+import { TemplatePreview } from '@/components/templates/preview'
 import {
   useCreateDocumentTemplate,
   useUpdateDocumentTemplate,
 } from '@/lib/hooks/useDocumentTemplates'
+import { usePropertyManager } from '@/lib/hooks'
 import { CATEGORIE_TEMPLATE, FORMATI_PAGINA, ORIENTAMENTI_PAGINA } from '@/constants'
 import type { DocumentTemplate, CategoriaTemplate } from '@/types/database'
-import { Check, ChevronLeft, ChevronRight } from 'lucide-react'
+import type { TemplateContext } from '@/lib/services/template-resolver'
+import { Check, ChevronLeft, ChevronRight, Eye, Pencil } from 'lucide-react'
 import '@/styles/template-editor.css'
 
 const templateSchema = z.object({
   nome: z.string().min(1, 'Nome obbligatorio'),
   descrizione: z.string().optional(),
-  categoria: z.enum(['preventivo', 'proposta', 'contratto', 'mandato_pf', 'mandato_pg', 'procura', 'elenco_dotazioni', 'report_mensile']),
+  categoria: z.enum(['preventivo', 'proposta', 'mandato_pf', 'mandato_pg', 'procura', 'elenco_dotazioni', 'report_mensile']),
   formato_pagina: z.enum(['A4', 'A5', 'Letter']),
   orientamento: z.enum(['portrait', 'landscape']),
   attivo: z.boolean(),
@@ -48,7 +51,6 @@ type TemplateFormData = z.infer<typeof templateSchema>
 const NOMI_SUGGERITI: Record<string, string> = {
   preventivo: 'Preventivo Standard',
   proposta: 'Proposta Commerciale',
-  contratto: 'Contratto di Gestione',
   mandato_pf: 'Mandato Persona Fisica',
   mandato_pg: 'Mandato Persona Giuridica',
   procura: 'Procura Allegata',
@@ -80,9 +82,26 @@ export function TemplateDialog({
 }: TemplateDialogProps) {
   const [currentStep, setCurrentStep] = useState(0)
   const [editorContent, setEditorContent] = useState<Record<string, unknown>>({})
+  const [editorView, setEditorView] = useState<'editor' | 'preview'>('editor')
 
   const createTemplate = useCreateDocumentTemplate()
   const updateTemplate = useUpdateDocumentTemplate()
+  const { data: propertyManager } = usePropertyManager()
+
+  // Load Google Fonts for preview
+  useEffect(() => {
+    const fonts = [propertyManager?.font_titoli, propertyManager?.font_corpo].filter(Boolean) as string[]
+    fonts.forEach((font) => {
+      const linkId = `gfont-${font.replace(/\s+/g, '-')}`
+      if (!document.getElementById(linkId)) {
+        const link = document.createElement('link')
+        link.id = linkId
+        link.rel = 'stylesheet'
+        link.href = `https://fonts.googleapis.com/css2?family=${encodeURIComponent(font)}:wght@400;600;700&display=swap`
+        document.head.appendChild(link)
+      }
+    })
+  }, [propertyManager?.font_titoli, propertyManager?.font_corpo])
 
   const isEditing = !!template?.id
 
@@ -100,6 +119,8 @@ export function TemplateDialog({
   })
 
   const selectedCategoria = form.watch('categoria')
+  const selectedCategoriaInfo = CATEGORIE_TEMPLATE.find(c => c.id === selectedCategoria)
+  const isPdfA4 = selectedCategoriaInfo?.formato_output === 'pdf_a4'
 
   useEffect(() => {
     if (template) {
@@ -293,6 +314,9 @@ export function TemplateDialog({
                             )}
                           </div>
                           <p className="text-xs text-muted-foreground mt-1">{cat.description}</p>
+                          <Badge variant="outline" className="text-[10px] px-1.5 py-0 mt-1">
+                            {cat.formato_output === 'pdf_a4' ? '📄 PDF A4' : '✉️ Email'}
+                          </Badge>
                         </div>
                       </button>
                     )
@@ -386,14 +410,70 @@ export function TemplateDialog({
               </div>
             )}
 
-            {/* Step 2: Editor */}
+            {/* Step 2: Editor + Preview toggle */}
             {currentStep === 2 && (
-              <div className="h-full overflow-y-auto">
-                <TemplateEditor
-                  content={editorContent}
-                  onChange={setEditorContent}
-                  placeholder="Inizia a creare il tuo template... Usa @ per inserire variabili dinamiche."
-                />
+              <div className="h-full flex flex-col overflow-hidden">
+                {/* Toggle bar */}
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="inline-flex rounded-lg border p-0.5 bg-muted/50">
+                    <button
+                      type="button"
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                        editorView === 'editor' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'
+                      }`}
+                      onClick={() => setEditorView('editor')}
+                    >
+                      <Pencil className="h-3 w-3" />
+                      Editor
+                    </button>
+                    <button
+                      type="button"
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                        editorView === 'preview' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'
+                      }`}
+                      onClick={() => setEditorView('preview')}
+                    >
+                      <Eye className="h-3 w-3" />
+                      Anteprima
+                    </button>
+                  </div>
+                  {editorView === 'preview' && isPdfA4 && propertyManager?.intestazione_json && (
+                    <span className="text-xs text-green-600">● Intestazione e piè di pagina applicati (PDF A4)</span>
+                  )}
+                  {editorView === 'preview' && !isPdfA4 && (
+                    <span className="text-xs text-muted-foreground">Formato email — senza intestazione/piè di pagina</span>
+                  )}
+                </div>
+
+                {editorView === 'editor' ? (
+                  <div className="flex-1 overflow-y-auto">
+                    <TemplateEditor
+                      content={editorContent}
+                      onChange={setEditorContent}
+                      placeholder="Inizia a creare il tuo template... Usa @ per inserire variabili dinamiche."
+                    />
+                  </div>
+                ) : (
+                  <div className="flex-1 overflow-y-auto bg-gray-100 rounded-lg p-4">
+                    <div
+                      className="bg-white shadow-lg mx-auto"
+                      style={{
+                        maxWidth: '700px',
+                        minHeight: '600px',
+                        padding: '40px',
+                        fontFamily: propertyManager?.font_corpo || 'Georgia, "Times New Roman", serif',
+                      }}
+                    >
+                      <TemplatePreview
+                        content={editorContent || {}}
+                        context={{ azienda: propertyManager || null } as TemplateContext}
+                        fontTitoli={propertyManager?.font_titoli || undefined}
+                        fontCorpo={propertyManager?.font_corpo || undefined}
+                        showHeaderFooter={isPdfA4}
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
