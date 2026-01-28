@@ -19,6 +19,9 @@ export * from './use-documenti'
 // Task
 export * from './use-task'
 
+// Appuntamenti (Calendar)
+export * from './use-appuntamenti'
+
 // Prenotazioni
 export * from './use-prenotazioni'
 
