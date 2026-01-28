@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import Link from 'next/link'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -27,16 +28,37 @@ export function AppuntamentiListCard({
     limit = 5,
     className
 }: AppuntamentiListCardProps) {
-    const { data: appuntamenti, isLoading } = useAppuntamenti({
+    const [dataInizio] = useState(new Date().toISOString())
+
+    const { data: appuntamenti, isLoading, error, isError } = useAppuntamenti({
         contattoId,
         proprietaId,
-        dataInizio: new Date().toISOString(),
+        dataInizio,
     })
 
     // Filter out cancelled/completed
     const activeAppuntamenti = appuntamenti?.filter(a =>
         a.stato !== 'annullato' && a.stato !== 'completato'
     ).slice(0, limit)
+
+    if (isError) {
+        return (
+            <Card className={className}>
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                    <CardTitle className="text-lg flex items-center gap-2">
+                        <Clock className="h-5 w-5" />
+                        Prossimi Appuntamenti
+                    </CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <div className="text-red-500 text-sm">
+                        <p>Errore nel caricamento.</p>
+                        <p className="text-xs mt-1">{error instanceof Error ? error.message : 'Errore sconosciuto'}</p>
+                    </div>
+                </CardContent>
+            </Card>
+        )
+    }
 
     if (isLoading) {
         return (
