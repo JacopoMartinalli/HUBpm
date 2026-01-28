@@ -58,6 +58,8 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 
+import { AppuntamentoSuggestionCard } from '@/components/appuntamenti/AppuntamentoSuggestionCard'
+
 const TIPI_INTERAZIONE: { id: TipoInterazione; label: string; icon: typeof Phone }[] = [
   { id: 'chiamata', label: 'Chiamata', icon: PhoneCall },
   { id: 'email', label: 'Email', icon: Mail },
@@ -289,6 +291,17 @@ export default function LeadDetailPage() {
             </div>
           </CardContent>
         </Card>
+      )}
+
+      {/* Suggerimenti Appuntamenti (solo L1) */}
+      {!isClosedLead && lead.fase_lead === 'L1' && (
+        <AppuntamentoSuggestionCard
+          tipoEntita="lead"
+          fase="L1"
+          entityId={lead.id}
+          contattoId={lead.id}
+          proprietaId={proprieta?.[0]?.id}
+        />
       )}
 
       {/* Lead perso */}

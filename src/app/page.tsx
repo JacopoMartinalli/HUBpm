@@ -2,7 +2,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { StatsCard, LoadingPage, FaseBadge } from '@/components/shared'
-import { useDashboardStats, useTaskPendenti, usePrenotazioniProssime } from '@/lib/hooks'
+import { useDashboardStats, useTaskPendenti, usePrenotazioniProssime, useAppuntamentiProssimi } from '@/lib/hooks'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import {
   Users,
@@ -12,6 +12,10 @@ import {
   AlertCircle,
   CalendarDays,
   TrendingUp,
+  Clock,
+  MapPin,
+  Phone,
+  Video,
 } from 'lucide-react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
@@ -20,6 +24,7 @@ export default function DashboardPage() {
   const { data: stats, isLoading: statsLoading } = useDashboardStats()
   const { data: taskPendenti, isLoading: taskLoading } = useTaskPendenti()
   const { data: prenotazioni, isLoading: prenotazioniLoading } = usePrenotazioniProssime()
+  const { data: appuntamenti, isLoading: appuntamentiLoading } = useAppuntamentiProssimi(5)
 
   if (statsLoading) {
     return <LoadingPage />
@@ -169,6 +174,68 @@ export default function DashboardPage() {
             ) : (
               <p className="text-muted-foreground text-center py-4">
                 Nessun check-in nei prossimi 7 giorni
+              </p>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Prossimi Appuntamenti */}
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle className="flex items-center gap-2">
+              <Clock className="h-5 w-5" />
+              Prossimi Appuntamenti
+            </CardTitle>
+            <Button variant="ghost" size="sm" asChild>
+              <Link href="/calendario">Calendario</Link>
+            </Button>
+          </CardHeader>
+          <CardContent>
+            {appuntamentiLoading ? (
+              <p className="text-muted-foreground">Caricamento...</p>
+            ) : appuntamenti && appuntamenti.length > 0 ? (
+              <div className="space-y-3">
+                {appuntamenti.map((app) => (
+                  <div
+                    key={app.id}
+                    className="flex items-center justify-between p-3 rounded-lg bg-muted/50"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className={`
+                        p-2 rounded-full
+                        ${app.tipo === 'sopralluogo' ? 'bg-blue-100 text-blue-600' : ''}
+                        ${app.tipo === 'telefonata' ? 'bg-green-100 text-green-600' : ''}
+                        ${app.tipo === 'videochiamata' ? 'bg-purple-100 text-purple-600' : ''}
+                        ${app.tipo === 'riunione' ? 'bg-amber-100 text-amber-600' : ''}
+                        ${app.tipo === 'altro' ? 'bg-gray-100 text-gray-600' : ''}
+                      `}>
+                        {app.tipo === 'sopralluogo' && <MapPin className="h-4 w-4" />}
+                        {app.tipo === 'telefonata' && <Phone className="h-4 w-4" />}
+                        {app.tipo === 'videochiamata' && <Video className="h-4 w-4" />}
+                        {app.tipo === 'riunione' && <Users className="h-4 w-4" />}
+                        {app.tipo === 'altro' && <CalendarDays className="h-4 w-4" />}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-sm truncate">{app.titolo}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {app.contatto?.nome} {app.contatto?.cognome}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm font-medium">
+                        {formatDate(app.data_inizio)}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {new Date(app.data_inizio).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-muted-foreground text-center py-4">
+                Nessun appuntamento in programma
               </p>
             )}
           </CardContent>

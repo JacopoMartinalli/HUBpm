@@ -44,6 +44,11 @@ const navigation: NavSection[] = [
         href: '/',
         icon: LayoutDashboard,
       },
+      {
+        title: 'Calendario',
+        href: '/calendario',
+        icon: CalendarDays,
+      },
     ],
   },
   {

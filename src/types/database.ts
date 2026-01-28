@@ -59,6 +59,10 @@ export type StatoTask = 'da_fare' | 'in_corso' | 'completato' | 'bloccato' | 'an
 export type PrioritaTask = 'bassa' | 'media' | 'alta' | 'urgente'
 export type CategoriaTask = 'documenti' | 'pratiche' | 'comunicazioni' | 'setup' | 'verifica' | 'altro'
 
+// Appuntamenti
+export type TipoAppuntamento = 'sopralluogo' | 'telefonata' | 'videochiamata' | 'riunione' | 'altro'
+export type StatoAppuntamento = 'proposto' | 'confermato' | 'completato' | 'annullato' | 'no_show'
+
 // Servizi
 export type TipoServizio = 'one_shot' | 'ricorrente'
 export type TipoPrezzo = 'fisso' | 'percentuale' | 'da_quotare'
@@ -780,6 +784,48 @@ export interface PrenotazioneDettaglio extends Prenotazione {
   spettanza_proprietario: number
 }
 
+// Appuntamento (Calendar Appointments)
+export interface Appuntamento {
+  id: string
+  tenant_id: string
+  contatto_id: string | null
+  proprieta_id: string | null
+  proprieta_lead_id: string | null
+  titolo: string
+  descrizione: string | null
+  tipo: TipoAppuntamento
+  stato: StatoAppuntamento
+  data_inizio: string
+  data_fine: string
+  tutto_il_giorno: boolean
+  luogo: string | null
+  note: string | null
+  promemoria_minuti: number | null
+  invito_inviato: boolean
+  invito_accettato: boolean | null
+  created_at: string
+  updated_at: string
+  // Relazioni
+  contatto?: Contatto
+  proprieta?: Proprieta
+  proprieta_lead?: ProprietaLead
+}
+
+// Template for auto-generating appointment suggestions on phase change
+export interface TemplateAppuntamento {
+  id: string
+  tenant_id: string
+  tipo_entita: 'lead' | 'proprieta_lead'
+  fase_trigger: string
+  titolo: string
+  descrizione: string | null
+  tipo: TipoAppuntamento
+  durata_minuti: number
+  attivo: boolean
+  ordine: number
+  created_at: string
+}
+
 // ============================================
 // TIPI PER INSERT/UPDATE
 // ============================================
@@ -885,6 +931,10 @@ export type TaskUpdate = Partial<TaskInsert>
 
 export type PrenotazioneInsert = Omit<Prenotazione, 'id' | 'created_at' | 'updated_at' | 'notti' | 'proprieta'>
 export type PrenotazioneUpdate = Partial<PrenotazioneInsert>
+
+export type AppuntamentoInsert = Omit<Appuntamento, 'id' | 'created_at' | 'updated_at' | 'contatto' | 'proprieta' | 'proprieta_lead'>
+export type AppuntamentoUpdate = Partial<AppuntamentoInsert>
+
 
 export type ServizioVendutoInsert = Omit<ServizioVenduto, 'id' | 'created_at' | 'updated_at' | 'servizio' | 'contatto' | 'proprieta'>
 export type ServizioVendutoUpdate = Partial<ServizioVendutoInsert>
