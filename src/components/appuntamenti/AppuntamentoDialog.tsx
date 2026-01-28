@@ -51,6 +51,8 @@ interface AppuntamentoDialogProps {
         proprietaId?: string
         proprietaLeadId?: string
         titolo?: string
+        descrizione?: string
+        tipo?: TipoAppuntamento
         luogo?: string
     }
 }
@@ -156,8 +158,8 @@ export function AppuntamentoDialog({
                 // Creating new with dates
                 reset({
                     titolo: prefillData?.titolo || '',
-                    descrizione: '',
-                    tipo: 'sopralluogo',
+                    descrizione: prefillData?.descrizione || '',
+                    tipo: prefillData?.tipo || 'sopralluogo',
                     stato: 'proposto',
                     data_inizio: formatDateForInput(defaultDates.start),
                     ora_inizio: formatTimeForInput(defaultDates.start),
@@ -174,8 +176,8 @@ export function AppuntamentoDialog({
                 const later = new Date(now.getTime() + 60 * 60 * 1000)
                 reset({
                     titolo: prefillData?.titolo || '',
-                    descrizione: '',
-                    tipo: 'sopralluogo',
+                    descrizione: prefillData?.descrizione || '',
+                    tipo: prefillData?.tipo || 'sopralluogo',
                     stato: 'proposto',
                     data_inizio: formatDateForInput(now),
                     ora_inizio: formatTimeForInput(now),
