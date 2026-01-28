@@ -46,8 +46,7 @@ export function useAppuntamenti(filters?: AppuntamentoFilters) {
                 .select(`
           *,
           contatto:contatti(*),
-          proprieta:proprieta(*),
-          proprieta_lead:proprieta_lead(*)
+          proprieta:proprieta(*)
         `)
                 .eq('tenant_id', DEFAULT_TENANT_ID)
                 .order('data_inizio', { ascending: true })
@@ -91,8 +90,7 @@ export function useAppuntamentiCalendar(start: Date, end: Date) {
                 .select(`
           *,
           contatto:contatti(nome, cognome, email, telefono),
-          proprieta:proprieta(nome, indirizzo),
-          proprieta_lead:proprieta_lead(*)
+          proprieta:proprieta(nome, indirizzo)
         `)
                 .eq('tenant_id', DEFAULT_TENANT_ID)
                 .gte('data_inizio', start.toISOString())
@@ -140,8 +138,7 @@ export function useAppuntamento(id: string | undefined) {
                 .select(`
           *,
           contatto:contatti(*),
-          proprieta:proprieta(*),
-          proprieta_lead:proprieta_lead(*)
+          proprieta:proprieta(*)
         `)
                 .eq('id', id)
                 .single()

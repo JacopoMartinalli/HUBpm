@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { useTemplateAppuntamenti } from '@/lib/hooks/use-appuntamenti'
+import { useTemplateAppuntamenti, useAppuntamenti } from '@/lib/hooks/use-appuntamenti'
 import { AppuntamentoDialog } from './AppuntamentoDialog'
 import { Lightbulb, CalendarClock, ArrowRight } from 'lucide-react'
 import type { TipoAppuntamento } from '@/types/database'
@@ -11,8 +11,8 @@ import type { TipoAppuntamento } from '@/types/database'
 interface AppuntamentoSuggestionCardProps {
     tipoEntita: 'lead' | 'proprieta_lead'
     fase: string
-    entityId: string // contattoId or proprietaLeadId
-    contattoId?: string // always needed for linking contact
+    entityId: string
+    contattoId?: string
     proprietaLeadId?: string
     proprietaId?: string
 }
@@ -25,7 +25,10 @@ export function AppuntamentoSuggestionCard({
     proprietaLeadId,
     proprietaId
 }: AppuntamentoSuggestionCardProps) {
-    const { data: templates, isLoading } = useTemplateAppuntamenti(tipoEntita, fase)
+    const { data: templates, isLoading: isLoadingTemplates } = useTemplateAppuntamenti(tipoEntita, fase)
+    const { data: appuntamenti, isLoading: isLoadingAppuntamenti } = useAppuntamenti({
+        contattoId: contattoId || entityId
+    })
     const [selectedTemplate, setSelectedTemplate] = useState<{
         titolo: string
         descrizione: string
@@ -33,15 +36,30 @@ export function AppuntamentoSuggestionCard({
     } | null>(null)
     const [isDialogOpen, setIsDialogOpen] = useState(false)
 
-    if (isLoading || !templates || templates.length === 0) {
+    // Wait for both to load
+    if (isLoadingTemplates || isLoadingAppuntamenti) {
         return null
     }
 
-    const handleSuggestionClick = (template: typeof templates[0]) => {
+    // Get appointment types that already exist (active ones only)
+    const existingTypes = new Set(
+        appuntamenti
+            ?.filter(a => a.stato !== 'annullato' && a.stato !== 'completato')
+            ?.map(a => a.tipo) || []
+    )
+
+    // Filter out templates for which an appointment already exists
+    const availableTemplates = templates?.filter(t => !existingTypes.has(t.tipo)) || []
+
+    if (availableTemplates.length === 0) {
+        return null
+    }
+
+    const handleSuggestionClick = (template: { titolo: string; descrizione: string | null; tipo: TipoAppuntamento }) => {
         setSelectedTemplate({
             titolo: template.titolo,
             descrizione: template.descrizione || '',
-            tipo: template.tipo // Assuming template has 'tipo' field matching TipoAppuntamento
+            tipo: template.tipo
         })
         setIsDialogOpen(true)
     }
@@ -56,7 +74,7 @@ export function AppuntamentoSuggestionCard({
                     </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                    {templates.map((template) => (
+                    {availableTemplates.map((template) => (
                         <div
                             key={template.id}
                             className="flex items-center justify-between p-3 bg-white/80 rounded-lg border border-blue-100 shadow-sm"
@@ -64,7 +82,7 @@ export function AppuntamentoSuggestionCard({
                             <div className="flex items-start gap-3">
                                 <div className="p-2 bg-blue-100 rounded-full mt-0.5">
                                     <CalendarClock className="h-4 w-4 text-blue-600" />
-                                    --</div>
+                                </div>
                                 <div>
                                     <h4 className="font-medium text-sm text-gray-900">{template.titolo}</h4>
                                     {template.descrizione && (
@@ -95,7 +113,7 @@ export function AppuntamentoSuggestionCard({
                     setSelectedTemplate(null)
                 }}
                 prefillData={{
-                    contattoId: contattoId,
+                    contattoId: contattoId || entityId,
                     proprietaLeadId: proprietaLeadId,
                     proprietaId: proprietaId,
                     titolo: selectedTemplate?.titolo,

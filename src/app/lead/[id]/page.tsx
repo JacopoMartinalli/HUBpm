@@ -59,6 +59,7 @@ import {
 } from '@/components/ui/select'
 
 import { AppuntamentoSuggestionCard } from '@/components/appuntamenti/AppuntamentoSuggestionCard'
+import { AppuntamentiListCard } from '@/components/appuntamenti/AppuntamentiListCard'
 
 const TIPI_INTERAZIONE: { id: TipoInterazione; label: string; icon: typeof Phone }[] = [
   { id: 'chiamata', label: 'Chiamata', icon: PhoneCall },
@@ -476,36 +477,41 @@ export default function LeadDetailPage() {
           </CardContent>
         </Card>
 
-        {/* Follow-up */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg flex items-center gap-2">
-              <CalendarDays className="h-5 w-5" />
-              Follow-up
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <Label htmlFor="followup-date">Prossimo follow-up</Label>
-              <Input
-                id="followup-date"
-                type="date"
-                className="mt-1"
-                value={lead.data_prossimo_followup || ''}
-                onChange={(e) => handleFollowupChange(e.target.value)}
-              />
-              {lead.data_prossimo_followup && (
-                <p className="text-xs text-muted-foreground mt-1">
-                  {new Date(lead.data_prossimo_followup) < new Date(new Date().toDateString())
-                    ? '⚠️ Follow-up scaduto'
-                    : new Date(lead.data_prossimo_followup).toDateString() === new Date().toDateString()
-                      ? '📞 Da richiamare oggi'
-                      : `Tra ${Math.ceil((new Date(lead.data_prossimo_followup).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))} giorni`}
-                </p>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+        {/* Appuntamenti + Follow-up stacked */}
+        <div className="space-y-6">
+          <AppuntamentiListCard contattoId={lead.id} />
+
+          {/* Follow-up */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <CalendarDays className="h-5 w-5" />
+                Follow-up
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <Label htmlFor="followup-date">Prossimo follow-up</Label>
+                <Input
+                  id="followup-date"
+                  type="date"
+                  className="mt-1"
+                  value={lead.data_prossimo_followup || ''}
+                  onChange={(e) => handleFollowupChange(e.target.value)}
+                />
+                {lead.data_prossimo_followup && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {new Date(lead.data_prossimo_followup) < new Date(new Date().toDateString())
+                      ? '⚠️ Follow-up scaduto'
+                      : new Date(lead.data_prossimo_followup).toDateString() === new Date().toDateString()
+                        ? '📞 Da richiamare oggi'
+                        : `Tra ${Math.ceil((new Date(lead.data_prossimo_followup).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))} giorni`}
+                  </p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
 
       {/* Storico Interazioni */}

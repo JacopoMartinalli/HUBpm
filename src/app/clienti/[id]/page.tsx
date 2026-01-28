@@ -24,6 +24,7 @@ import {
 import { FASI_PROPRIETA } from '@/constants'
 import { formatDate, getFullName } from '@/lib/utils'
 import Link from 'next/link'
+import { AppuntamentiListCard } from '@/components/appuntamenti/AppuntamentiListCard'
 
 function getStatoCliente(proprieta: Array<{ fase: string }> | undefined) {
   if (!proprieta || proprieta.length === 0) return { label: 'Nessuna proprietà', color: 'bg-gray-100 text-gray-600', icon: XCircle }
@@ -146,6 +147,8 @@ export default function ClienteDetailPage() {
 
         <TabsContent value="panoramica">
           <div className="space-y-6">
+            {/* Prossimi appuntamenti */}
+            <AppuntamentiListCard contattoId={cliente.id} />
             {/* Proprietà in lavorazione - evidenziate */}
             {inLavorazione.length > 0 && (
               <Card>
