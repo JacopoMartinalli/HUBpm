@@ -250,15 +250,15 @@ export function AppuntamentoDialog({
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-lg max-h-[90vh] flex flex-col p-0">
-                <DialogHeader className="p-6 pb-0">
+            <DialogContent className="max-w-lg max-h-[85vh] flex flex-col p-0 overflow-hidden">
+                <DialogHeader className="p-6 pb-0 flex-none">
                     <DialogTitle>
                         {isEditing ? 'Modifica Appuntamento' : 'Nuovo Appuntamento'}
                     </DialogTitle>
                 </DialogHeader>
 
-                <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col flex-1 overflow-hidden">
-                    <ScrollArea className="flex-1 px-6">
+                <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col flex-1 min-h-0 overflow-hidden">
+                    <div className="flex-1 overflow-y-auto px-6 min-h-0">
                         <div className="space-y-4 py-4">
                             {/* Title */}
                             <div className="space-y-2">
@@ -266,6 +266,7 @@ export function AppuntamentoDialog({
                                 <Input
                                     id="titolo"
                                     placeholder="Es: Sopralluogo Villa Rossi"
+                                    className="focus-visible:ring-black focus-visible:border-black"
                                     {...register('titolo', { required: true })}
                                 />
                             </div>
@@ -297,7 +298,7 @@ export function AppuntamentoDialog({
                                     value={watch('contatto_id')}
                                     onValueChange={(value) => setValue('contatto_id', value)}
                                 >
-                                    <SelectTrigger>
+                                    <SelectTrigger className="focus:ring-black focus:border-black">
                                         <SelectValue placeholder="Seleziona contatto" />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -327,6 +328,7 @@ export function AppuntamentoDialog({
                                     <Input
                                         id="data_inizio"
                                         type="date"
+                                        className="focus-visible:ring-black focus-visible:border-black"
                                         min={new Date().toISOString().split('T')[0]}
                                         {...register('data_inizio', { required: true })}
                                     />
@@ -337,6 +339,7 @@ export function AppuntamentoDialog({
                                         <Input
                                             id="ora_inizio"
                                             type="time"
+                                            className="focus-visible:ring-black focus-visible:border-black"
                                             {...register('ora_inizio', {
                                                 onChange: (e) => {
                                                     const startTime = e.target.value
@@ -359,6 +362,7 @@ export function AppuntamentoDialog({
                                     <Input
                                         id="data_fine"
                                         type="date"
+                                        className="focus-visible:ring-black focus-visible:border-black"
                                         min={dataInizio || new Date().toISOString().split('T')[0]}
                                         {...register('data_fine', { required: true })}
                                     />
@@ -369,6 +373,7 @@ export function AppuntamentoDialog({
                                         <Input
                                             id="ora_fine"
                                             type="time"
+                                            className="focus-visible:ring-black focus-visible:border-black"
                                             {...register('ora_fine')}
                                         />
                                     </div>
@@ -381,6 +386,7 @@ export function AppuntamentoDialog({
                                 <Input
                                     id="luogo"
                                     placeholder="Indirizzo o link videocall"
+                                    className="focus-visible:ring-black focus-visible:border-black"
                                     {...register('luogo')}
                                 />
                             </div>
@@ -393,7 +399,7 @@ export function AppuntamentoDialog({
                                         value={watch('stato')}
                                         onValueChange={(value) => setValue('stato', value as StatoAppuntamento)}
                                     >
-                                        <SelectTrigger>
+                                        <SelectTrigger className="focus:ring-black focus:border-black">
                                             <SelectValue />
                                         </SelectTrigger>
                                         <SelectContent>
@@ -414,13 +420,14 @@ export function AppuntamentoDialog({
                                     id="note"
                                     rows={2}
                                     placeholder="Note aggiuntive..."
+                                    className="focus-visible:ring-black focus-visible:border-black"
                                     {...register('note')}
                                 />
                             </div>
                         </div>
-                    </ScrollArea>
+                    </div>
 
-                    <DialogFooter className="p-6 pt-2 border-t flex gap-2">
+                    <DialogFooter className="p-6 pt-4 border-t flex-none bg-white z-10 flex gap-2">
                         {isEditing && (
                             <Button
                                 type="button"
