@@ -52,10 +52,10 @@ function renderBlockContent(blockType: string, config: Record<string, unknown>, 
                             {config.showAddress !== false && <div className={`text-gray-600 ${cls}`}>{data.indirizzo as string}</div>}
                             {config.showContacts !== false && (
                                 <div className={`text-gray-500 text-sm mt-1 ${cls}`}>
-                                    {[data.email, data.telefono].filter(Boolean).join(' • ')}
+                                    {[data.email as string, data.telefono as string].filter(Boolean).join(' • ')}
                                 </div>
                             )}
-                            {config.showPiva !== false && data.piva && (
+                            {config.showPiva !== false && Boolean(data.piva) && (
                                 <div className={`text-gray-500 text-sm ${cls}`}>P.IVA {data.piva as string}</div>
                             )}
                         </div>
@@ -72,18 +72,18 @@ function renderBlockContent(blockType: string, config: Record<string, unknown>, 
                 <div className="mb-4">
                     <div className="text-sm text-gray-500 mb-1">Destinatario:</div>
                     <div className={`font-semibold text-gray-900 ${cls}`}>{data.nome as string}</div>
-                    {config.showAddress !== false && data.indirizzo && (
+                    {config.showAddress !== false && Boolean(data.indirizzo) && (
                         <div className={`text-gray-600 ${cls}`}>{data.indirizzo as string}</div>
                     )}
                     {config.showContacts !== false && (
                         <div className={`text-gray-500 text-sm ${cls}`}>
-                            {[data.email, data.telefono].filter(Boolean).join(' • ')}
+                            {[data.email as string, data.telefono as string].filter(Boolean).join(' • ')}
                         </div>
                     )}
-                    {config.showCf !== false && data.cf && (
+                    {config.showCf !== false && Boolean(data.cf) && (
                         <div className={`text-gray-500 text-sm ${cls}`}>C.F. {data.cf as string}</div>
                     )}
-                    {config.showPiva !== false && data.piva && (
+                    {config.showPiva !== false && Boolean(data.piva) && (
                         <div className={`text-gray-500 text-sm ${cls}`}>P.IVA {data.piva as string}</div>
                     )}
                 </div>
@@ -98,7 +98,7 @@ function renderBlockContent(blockType: string, config: Record<string, unknown>, 
                 <div className="mb-4">
                     <div className="text-sm text-gray-500 mb-1">Proprietà:</div>
                     <div className={`font-semibold text-gray-900 ${cls}`}>{data.nome as string}</div>
-                    {config.showAddress !== false && data.indirizzo && (
+                    {config.showAddress !== false && Boolean(data.indirizzo) && (
                         <div className={`text-gray-600 ${cls}`}>{data.indirizzo as string}</div>
                     )}
                     {config.showDetails !== false && (
@@ -111,7 +111,7 @@ function renderBlockContent(blockType: string, config: Record<string, unknown>, 
                             ].filter(Boolean).join(' • ')}
                         </div>
                     )}
-                    {config.showCodes !== false && (data.cir || data.cin) && (
+                    {config.showCodes !== false && (Boolean(data.cir) || Boolean(data.cin)) && (
                         <div className={`text-gray-500 text-sm ${cls}`}>
                             {[data.cir ? `CIR: ${data.cir}` : null, data.cin ? `CIN: ${data.cin}` : null].filter(Boolean).join(' • ')}
                         </div>

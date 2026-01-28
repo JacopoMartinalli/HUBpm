@@ -23,7 +23,7 @@ import {
 } from '@/components/ui/select'
 import { useCreateContatto, useUpdateContatto } from '@/lib/hooks'
 import { TIPI_PARTNER, TIPI_PERSONA, TIPI_TARIFFA } from '@/constants'
-import type { Contatto } from '@/types/database'
+import type { Contatto, TipoPartner, TipoTariffa } from '@/types/database'
 
 const contattoSchema = z.object({
   nome: z.string().min(1, 'Nome obbligatorio'),
@@ -112,6 +112,8 @@ export function ContattoDialog({
       const payload = {
         ...data,
         tipo: 'partner' as const,
+        tipo_partner: data.tipo_partner as TipoPartner,
+        tariffa_tipo: data.tariffa_tipo as TipoTariffa | undefined,
         email: data.email || undefined,
       }
 

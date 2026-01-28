@@ -276,15 +276,15 @@ export function ProposteProprietaView({
           proprieta={propostaPerDocumento.proprieta}
           proposta={{
             id: propostaPerDocumento.id,
-            numero: propostaPerDocumento.numero,
+            numero: propostaPerDocumento.numero ?? undefined,
             data: propostaPerDocumento.data_creazione,
-            totale: propostaPerDocumento.totale,
-            subtotale: propostaPerDocumento.subtotale,
-            sconto_percentuale: propostaPerDocumento.sconto_percentuale,
-            sconto_fisso: propostaPerDocumento.sconto_fisso,
+            totale: propostaPerDocumento.totale ?? undefined,
+            subtotale: propostaPerDocumento.subtotale ?? undefined,
+            sconto_percentuale: propostaPerDocumento.sconto_percentuale ?? undefined,
+            sconto_fisso: propostaPerDocumento.sconto_fisso ?? undefined,
             items: propostaPerDocumento.items?.map(item => ({
               nome: item.nome,
-              descrizione: item.descrizione,
+              descrizione: item.descrizione ?? undefined,
               quantita: item.quantita,
               prezzo_unitario: item.prezzo_unitario,
               prezzo_totale: item.prezzo_totale,

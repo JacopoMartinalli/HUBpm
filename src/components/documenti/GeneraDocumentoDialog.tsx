@@ -142,7 +142,6 @@ export function GeneraDocumentoDialog({
         titolo: titolo || titoloDefault,
         categoria: categoria,
         stato: 'generato',
-        data_generazione: new Date().toISOString(),
         dati_snapshot: {
           cliente: cliente ? {
             nome: cliente.nome,
@@ -291,9 +290,8 @@ export function GeneraDocumentoDialog({
           <div className="overflow-y-auto border rounded-lg bg-white">
             {selectedTemplate ? (
               <TemplatePreview
-                template={selectedTemplate}
+                content={selectedTemplate.contenuto as Record<string, unknown>}
                 context={templateContext}
-                scale={0.7}
               />
             ) : (
               <div className="flex items-center justify-center h-full text-muted-foreground">

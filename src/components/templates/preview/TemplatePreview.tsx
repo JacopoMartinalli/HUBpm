@@ -198,7 +198,7 @@ export function TemplatePreview({ content, context, className = '', fontTitoli, 
             )
         }
 
-        return <RenderNode node={content as TipTapNode} index={0} context={context} fontTitoli={fontTitoli} />
+        return <RenderNode node={content as unknown as unknown as TipTapNode} index={0} context={context} fontTitoli={fontTitoli} />
     }, [content, context, fontTitoli])
 
     // Header/footer from azienda settings, with defaults as fallback (only for PDF A4 documents)
@@ -211,12 +211,12 @@ export function TemplatePreview({ content, context, className = '', fontTitoli, 
 
     const renderedHeader = useMemo(() => {
         if (!headerContent || Object.keys(headerContent).length === 0) return null
-        return <RenderNode node={headerContent as TipTapNode} index={-1} context={context} fontTitoli={fontTitoli} />
+        return <RenderNode node={headerContent as unknown as TipTapNode} index={-1} context={context} fontTitoli={fontTitoli} />
     }, [headerContent, context, fontTitoli])
 
     const renderedFooter = useMemo(() => {
         if (!footerContent || Object.keys(footerContent).length === 0) return null
-        return <RenderNode node={footerContent as TipTapNode} index={-2} context={context} fontTitoli={fontTitoli} />
+        return <RenderNode node={footerContent as unknown as TipTapNode} index={-2} context={context} fontTitoli={fontTitoli} />
     }, [footerContent, context, fontTitoli])
 
     return (

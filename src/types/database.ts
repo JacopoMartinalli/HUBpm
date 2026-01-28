@@ -784,7 +784,49 @@ export interface PrenotazioneDettaglio extends Prenotazione {
 // TIPI PER INSERT/UPDATE
 // ============================================
 
-export type ContattoInsert = Omit<Contatto, 'id' | 'created_at' | 'updated_at' | 'ragione_sociale' | 'legale_rapp_nome' | 'legale_rapp_cognome' | 'legale_rapp_codice_fiscale' | 'referente_nome' | 'referente_cognome' | 'referente_email' | 'referente_telefono' | 'referente_ruolo' | 'data_prossimo_followup' | 'iban'> & {
+export type ContattoInsert = Omit<Contatto,
+  | 'id' | 'created_at' | 'updated_at'
+  // Campi società
+  | 'ragione_sociale' | 'legale_rapp_nome' | 'legale_rapp_cognome' | 'legale_rapp_codice_fiscale'
+  | 'referente_nome' | 'referente_cognome' | 'referente_email' | 'referente_telefono' | 'referente_ruolo'
+  // Campi opzionali
+  | 'data_prossimo_followup' | 'iban'
+  | 'codice_fiscale' | 'partita_iva' | 'indirizzo' | 'citta' | 'cap' | 'provincia'
+  | 'fase_lead' | 'esito_lead' | 'fonte_lead' | 'valore_stimato' | 'motivo_perso' | 'motivo_perso_codice' | 'numero_proprieta'
+  | 'fase_cliente' | 'data_conversione' | 'data_inizio_contratto' | 'data_fine_contratto'
+  | 'tipo_partner' | 'azienda' | 'specializzazioni' | 'tariffa_default' | 'tariffa_tipo'
+  | 'tipo_persona' | 'email' | 'telefono' | 'note'
+> & {
+  // Tutti i campi sono opzionali tranne tipo, nome, cognome
+  tipo_persona?: TipoPersona | null
+  email?: string | null
+  telefono?: string | null
+  codice_fiscale?: string | null
+  partita_iva?: string | null
+  indirizzo?: string | null
+  citta?: string | null
+  cap?: string | null
+  provincia?: string | null
+  // Lead
+  fase_lead?: FaseLead | null
+  esito_lead?: EsitoLead | null
+  fonte_lead?: string | null
+  valore_stimato?: number | null
+  motivo_perso?: string | null
+  motivo_perso_codice?: MotivoLeadPerso | null
+  numero_proprieta?: number | null
+  // Cliente
+  fase_cliente?: FaseCliente | null
+  data_conversione?: string | null
+  data_inizio_contratto?: string | null
+  data_fine_contratto?: string | null
+  // Partner
+  tipo_partner?: TipoPartner | null
+  azienda?: string | null
+  specializzazioni?: string | null
+  tariffa_default?: number | null
+  tariffa_tipo?: TipoTariffa | null
+  // Società
   ragione_sociale?: string | null
   legale_rapp_nome?: string | null
   legale_rapp_cognome?: string | null
@@ -794,15 +836,25 @@ export type ContattoInsert = Omit<Contatto, 'id' | 'created_at' | 'updated_at' |
   referente_email?: string | null
   referente_telefono?: string | null
   referente_ruolo?: string | null
+  // Altri
   data_prossimo_followup?: string | null
   iban?: string | null
+  note?: string | null
 }
 export type ContattoUpdate = Partial<ContattoInsert>
 
 export type ProprietaLeadInsert = Omit<ProprietaLead, 'id' | 'created_at' | 'updated_at' | 'contatto'>
 export type ProprietaLeadUpdate = Partial<ProprietaLeadInsert>
 
-export type ProprietaInsert = Omit<Proprieta, 'id' | 'created_at' | 'updated_at' | 'contatto' | 'locali' | 'asset' | 'sicurezza_estintore' | 'sicurezza_estintore_scadenza' | 'sicurezza_targhetta' | 'sicurezza_rilevatore_gas' | 'sicurezza_rilevatore_gas_necessario' | 'sicurezza_rilevatore_monossido' | 'sicurezza_cassetta_ps'> & {
+export type ProprietaInsert = Omit<Proprieta,
+  | 'id' | 'created_at' | 'updated_at' | 'contatto' | 'locali' | 'asset'
+  // Campi sicurezza
+  | 'sicurezza_estintore' | 'sicurezza_estintore_scadenza' | 'sicurezza_targhetta'
+  | 'sicurezza_rilevatore_gas' | 'sicurezza_rilevatore_gas_necessario'
+  | 'sicurezza_rilevatore_monossido' | 'sicurezza_cassetta_ps'
+  // Campi sopralluogo opzionali
+  | 'data_sopralluogo' | 'note_sopralluogo' | 'stato_sopralluogo'
+> & {
   sicurezza_estintore?: boolean
   sicurezza_estintore_scadenza?: string | null
   sicurezza_targhetta?: boolean
@@ -810,6 +862,9 @@ export type ProprietaInsert = Omit<Proprieta, 'id' | 'created_at' | 'updated_at'
   sicurezza_rilevatore_gas_necessario?: boolean
   sicurezza_rilevatore_monossido?: boolean
   sicurezza_cassetta_ps?: boolean
+  data_sopralluogo?: string | null
+  note_sopralluogo?: string | null
+  stato_sopralluogo?: string | null
 }
 export type ProprietaUpdate = Partial<ProprietaInsert>
 

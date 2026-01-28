@@ -156,7 +156,6 @@ export function CreaPropostaDialog({
           titolo: titoloDocumento,
           categoria: categoria,
           stato: 'generato',
-          data_generazione: new Date().toISOString(),
           dati_snapshot: {
             cliente: contatto ? {
               nome: contatto.nome,
@@ -197,6 +196,76 @@ export function CreaPropostaDialog({
         })
       } catch (error) {
         console.error(`Errore generazione documento ${categoria}:`, error)
+      }
+    }
+  }
+
+  // Funzione per creare le erogazioni dei servizi/pacchetti
+  const creaErogazioniServizi = async (
+    proprietaId: string,
+    propostaId: string,
+    items: SelectedItem[]
+  ) => {
+    const pacchettiItems = items.filter(item => item.tipo === 'pacchetto')
+    const serviziItems = items.filter(item => item.tipo === 'servizio')
+
+    // 1. Crea erogazione per ogni pacchetto
+    for (const item of pacchettiItems) {
+      try {
+        await supabase
+          .from('erogazione_pacchetti')
+          .insert({
+            tenant_id: DEFAULT_TENANT_ID,
+            proprieta_id: proprietaId,
+            pacchetto_id: item.id,
+            proposta_id: propostaId,
+            stato: 'da_iniziare',
+            prezzo_totale: item.prezzo * item.quantita,
+            data_inizio: new Date().toISOString().split('T')[0]
+          })
+      } catch (error) {
+        console.error(`Errore creazione erogazione pacchetto ${item.nome}:`, error)
+      }
+    }
+
+    // 2. Per i servizi singoli, crea un pacchetto "virtuale" per contenerli
+    if (serviziItems.length > 0) {
+      try {
+        // Crea un erogazione_pacchetti senza pacchetto_id (per servizi singoli)
+        const { data: erogazionePacchetto, error: errPacchetto } = await supabase
+          .from('erogazione_pacchetti')
+          .insert({
+            tenant_id: DEFAULT_TENANT_ID,
+            proprieta_id: proprietaId,
+            pacchetto_id: null, // Nessun pacchetto - contenitore per servizi singoli
+            proposta_id: propostaId,
+            stato: 'da_iniziare',
+            prezzo_totale: serviziItems.reduce((acc, s) => acc + s.prezzo * s.quantita, 0),
+            data_inizio: new Date().toISOString().split('T')[0],
+            note: 'Servizi singoli dalla proposta'
+          })
+          .select()
+          .single()
+
+        if (errPacchetto) {
+          console.error('Errore creazione contenitore servizi:', errPacchetto)
+          return
+        }
+
+        // Crea erogazione_servizi per ogni servizio singolo
+        for (const servizio of serviziItems) {
+          await supabase
+            .from('erogazione_servizi')
+            .insert({
+              tenant_id: DEFAULT_TENANT_ID,
+              erogazione_pacchetto_id: erogazionePacchetto.id,
+              servizio_id: servizio.id,
+              stato: 'da_iniziare',
+              prezzo: servizio.prezzo * servizio.quantita
+            })
+        }
+      } catch (error) {
+        console.error('Errore creazione erogazione servizi singoli:', error)
       }
     }
   }
@@ -287,7 +356,14 @@ export function CreaPropostaDialog({
         })
       }
 
-      // 3. Genera automaticamente i documenti (Proposta Commerciale + Preventivo)
+      // 3. Crea le erogazioni dei servizi/pacchetti
+      try {
+        await creaErogazioniServizi(proprietaId, proposta.id, selectedItems)
+      } catch (erogazioneError) {
+        console.error('Errore creazione erogazioni:', erogazioneError)
+      }
+
+      // 4. Genera automaticamente i documenti (Proposta Commerciale + Preventivo)
       try {
         await generaDocumentiAutomatici(
           proposta.id,
@@ -300,7 +376,7 @@ export function CreaPropostaDialog({
           scontoFissoValue,
           totale
         )
-        toast.success('Proposta creata con documenti generati')
+        toast.success('Proposta creata con documenti e servizi da erogare')
       } catch (docError) {
         console.error('Errore generazione documenti:', docError)
         toast.warning('Proposta creata, ma alcuni documenti non sono stati generati')
