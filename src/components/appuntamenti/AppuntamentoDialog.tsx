@@ -21,6 +21,7 @@ import {
     SelectValue,
 } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
+import { ScrollArea } from '@/components/ui/scroll-area'
 import {
     useCreateAppuntamento,
     useUpdateAppuntamento,
@@ -249,173 +250,177 @@ export function AppuntamentoDialog({
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-lg">
-                <DialogHeader>
+            <DialogContent className="max-w-lg max-h-[90vh] flex flex-col p-0">
+                <DialogHeader className="p-6 pb-0">
                     <DialogTitle>
                         {isEditing ? 'Modifica Appuntamento' : 'Nuovo Appuntamento'}
                     </DialogTitle>
                 </DialogHeader>
 
-                <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-                    {/* Title */}
-                    <div className="space-y-2">
-                        <Label htmlFor="titolo">Titolo *</Label>
-                        <Input
-                            id="titolo"
-                            placeholder="Es: Sopralluogo Villa Rossi"
-                            {...register('titolo', { required: true })}
-                        />
-                    </div>
-
-                    {/* Type */}
-                    <div className="space-y-2">
-                        <Label>Tipo</Label>
-                        <div className="flex flex-wrap gap-2">
-                            {TIPO_OPTIONS.map((option) => (
-                                <Button
-                                    key={option.value}
-                                    type="button"
-                                    variant={tipo === option.value ? 'default' : 'outline'}
-                                    size="sm"
-                                    onClick={() => setValue('tipo', option.value)}
-                                    className="flex items-center gap-1"
-                                >
-                                    {option.icon}
-                                    {option.label}
-                                </Button>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* Contact */}
-                    <div className="space-y-2">
-                        <Label htmlFor="contatto_id">Contatto</Label>
-                        <Select
-                            value={watch('contatto_id')}
-                            onValueChange={(value) => setValue('contatto_id', value)}
-                        >
-                            <SelectTrigger>
-                                <SelectValue placeholder="Seleziona contatto" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {contatti?.map((contatto) => (
-                                    <SelectItem key={contatto.id} value={contatto.id}>
-                                        {contatto.nome} {contatto.cognome} ({contatto.tipo === 'cliente' ? 'Cliente' : 'Lead'})
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
-
-                    {/* All day toggle */}
-                    <div className="flex items-center gap-2">
-                        <Switch
-                            id="tutto_il_giorno"
-                            checked={tuttoIlGiorno}
-                            onCheckedChange={(checked) => setValue('tutto_il_giorno', checked)}
-                        />
-                        <Label htmlFor="tutto_il_giorno">Tutto il giorno</Label>
-                    </div>
-
-                    {/* Date/Time */}
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="data_inizio">Data inizio</Label>
-                            <Input
-                                id="data_inizio"
-                                type="date"
-                                min={new Date().toISOString().split('T')[0]}
-                                {...register('data_inizio', { required: true })}
-                            />
-                        </div>
-                        {!tuttoIlGiorno && (
+                <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col flex-1 overflow-hidden">
+                    <ScrollArea className="flex-1 px-6">
+                        <div className="space-y-4 py-4">
+                            {/* Title */}
                             <div className="space-y-2">
-                                <Label htmlFor="ora_inizio">Ora inizio</Label>
+                                <Label htmlFor="titolo">Titolo *</Label>
                                 <Input
-                                    id="ora_inizio"
-                                    type="time"
-                                    {...register('ora_inizio', {
-                                        onChange: (e) => {
-                                            const startTime = e.target.value
-                                            if (startTime) {
-                                                const [hours, minutes] = startTime.split(':').map(Number)
-                                                const newHours = (hours + 1) % 24
-                                                const newTime = `${String(newHours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`
-                                                setValue('ora_fine', newTime)
-                                            }
-                                        }
-                                    })}
+                                    id="titolo"
+                                    placeholder="Es: Sopralluogo Villa Rossi"
+                                    {...register('titolo', { required: true })}
                                 />
                             </div>
-                        )}
-                    </div>
 
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="data_fine">Data fine</Label>
-                            <Input
-                                id="data_fine"
-                                type="date"
-                                min={dataInizio || new Date().toISOString().split('T')[0]}
-                                {...register('data_fine', { required: true })}
-                            />
-                        </div>
-                        {!tuttoIlGiorno && (
+                            {/* Type */}
                             <div className="space-y-2">
-                                <Label htmlFor="ora_fine">Ora fine</Label>
-                                <Input
-                                    id="ora_fine"
-                                    type="time"
-                                    {...register('ora_fine')}
-                                />
-                            </div>
-                        )}
-                    </div>
-
-                    {/* Location */}
-                    <div className="space-y-2">
-                        <Label htmlFor="luogo">Luogo / Link</Label>
-                        <Input
-                            id="luogo"
-                            placeholder="Indirizzo o link videocall"
-                            {...register('luogo')}
-                        />
-                    </div>
-
-                    {/* Status (only for editing) */}
-                    {isEditing && (
-                        <div className="space-y-2">
-                            <Label>Stato</Label>
-                            <Select
-                                value={watch('stato')}
-                                onValueChange={(value) => setValue('stato', value as StatoAppuntamento)}
-                            >
-                                <SelectTrigger>
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {STATO_OPTIONS.map((option) => (
-                                        <SelectItem key={option.value} value={option.value}>
+                                <Label>Tipo</Label>
+                                <div className="flex flex-wrap gap-2">
+                                    {TIPO_OPTIONS.map((option) => (
+                                        <Button
+                                            key={option.value}
+                                            type="button"
+                                            variant={tipo === option.value ? 'default' : 'outline'}
+                                            size="sm"
+                                            onClick={() => setValue('tipo', option.value)}
+                                            className="flex items-center gap-1"
+                                        >
+                                            {option.icon}
                                             {option.label}
-                                        </SelectItem>
+                                        </Button>
                                     ))}
-                                </SelectContent>
-                            </Select>
+                                </div>
+                            </div>
+
+                            {/* Contact */}
+                            <div className="space-y-2">
+                                <Label htmlFor="contatto_id">Contatto</Label>
+                                <Select
+                                    value={watch('contatto_id')}
+                                    onValueChange={(value) => setValue('contatto_id', value)}
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Seleziona contatto" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {contatti?.map((contatto) => (
+                                            <SelectItem key={contatto.id} value={contatto.id}>
+                                                {contatto.nome} {contatto.cognome} ({contatto.tipo === 'cliente' ? 'Cliente' : 'Lead'})
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
+                            {/* All day toggle */}
+                            <div className="flex items-center gap-2">
+                                <Switch
+                                    id="tutto_il_giorno"
+                                    checked={tuttoIlGiorno}
+                                    onCheckedChange={(checked) => setValue('tutto_il_giorno', checked)}
+                                />
+                                <Label htmlFor="tutto_il_giorno">Tutto il giorno</Label>
+                            </div>
+
+                            {/* Date/Time */}
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="data_inizio">Data inizio</Label>
+                                    <Input
+                                        id="data_inizio"
+                                        type="date"
+                                        min={new Date().toISOString().split('T')[0]}
+                                        {...register('data_inizio', { required: true })}
+                                    />
+                                </div>
+                                {!tuttoIlGiorno && (
+                                    <div className="space-y-2">
+                                        <Label htmlFor="ora_inizio">Ora inizio</Label>
+                                        <Input
+                                            id="ora_inizio"
+                                            type="time"
+                                            {...register('ora_inizio', {
+                                                onChange: (e) => {
+                                                    const startTime = e.target.value
+                                                    if (startTime) {
+                                                        const [hours, minutes] = startTime.split(':').map(Number)
+                                                        const newHours = (hours + 1) % 24
+                                                        const newTime = `${String(newHours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`
+                                                        setValue('ora_fine', newTime)
+                                                    }
+                                                }
+                                            })}
+                                        />
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="data_fine">Data fine</Label>
+                                    <Input
+                                        id="data_fine"
+                                        type="date"
+                                        min={dataInizio || new Date().toISOString().split('T')[0]}
+                                        {...register('data_fine', { required: true })}
+                                    />
+                                </div>
+                                {!tuttoIlGiorno && (
+                                    <div className="space-y-2">
+                                        <Label htmlFor="ora_fine">Ora fine</Label>
+                                        <Input
+                                            id="ora_fine"
+                                            type="time"
+                                            {...register('ora_fine')}
+                                        />
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Location */}
+                            <div className="space-y-2">
+                                <Label htmlFor="luogo">Luogo / Link</Label>
+                                <Input
+                                    id="luogo"
+                                    placeholder="Indirizzo o link videocall"
+                                    {...register('luogo')}
+                                />
+                            </div>
+
+                            {/* Status (only for editing) */}
+                            {isEditing && (
+                                <div className="space-y-2">
+                                    <Label>Stato</Label>
+                                    <Select
+                                        value={watch('stato')}
+                                        onValueChange={(value) => setValue('stato', value as StatoAppuntamento)}
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {STATO_OPTIONS.map((option) => (
+                                                <SelectItem key={option.value} value={option.value}>
+                                                    {option.label}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            )}
+
+                            {/* Notes */}
+                            <div className="space-y-2">
+                                <Label htmlFor="note">Note</Label>
+                                <Textarea
+                                    id="note"
+                                    rows={2}
+                                    placeholder="Note aggiuntive..."
+                                    {...register('note')}
+                                />
+                            </div>
                         </div>
-                    )}
+                    </ScrollArea>
 
-                    {/* Notes */}
-                    <div className="space-y-2">
-                        <Label htmlFor="note">Note</Label>
-                        <Textarea
-                            id="note"
-                            rows={2}
-                            placeholder="Note aggiuntive..."
-                            {...register('note')}
-                        />
-                    </div>
-
-                    <DialogFooter className="flex gap-2">
+                    <DialogFooter className="p-6 pt-2 border-t flex gap-2">
                         {isEditing && (
                             <Button
                                 type="button"
