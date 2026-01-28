@@ -1,19 +1,34 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
-import { Save, Building2, User, Phone, CreditCard, Palette, Globe, Instagram, Facebook, Linkedin } from 'lucide-react'
+import { Save, Building2, User, Phone, CreditCard, Palette, Globe, Instagram, Facebook, Linkedin, Upload, X, ImageIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { PageHeader, LoadingCard } from '@/components/shared'
 import { usePropertyManager, useUpsertPropertyManager } from '@/lib/hooks'
+import { supabase, DEFAULT_TENANT_ID } from '@/lib/supabase'
 import { toast } from 'sonner'
+
+const FONT_OPTIONS = [
+  { id: 'Inter', label: 'Inter' },
+  { id: 'Roboto', label: 'Roboto' },
+  { id: 'Open Sans', label: 'Open Sans' },
+  { id: 'Lato', label: 'Lato' },
+  { id: 'Montserrat', label: 'Montserrat' },
+  { id: 'Poppins', label: 'Poppins' },
+  { id: 'Raleway', label: 'Raleway' },
+  { id: 'Playfair Display', label: 'Playfair Display' },
+  { id: 'Merriweather', label: 'Merriweather' },
+  { id: 'Source Sans 3', label: 'Source Sans 3' },
+]
 
 const propertyManagerSchema = z.object({
   // Dati Aziendali
@@ -49,13 +64,142 @@ const propertyManagerSchema = z.object({
   swift: z.string().nullable().optional(),
   intestatario_conto: z.string().nullable().optional(),
   // Branding
-  logo_url: z.string().url('URL non valido').nullable().optional().or(z.literal('')),
+  logo_url: z.string().nullable().optional(),
   colore_primario: z.string().nullable().optional(),
+  colore_secondario: z.string().nullable().optional(),
+  font_titoli: z.string().nullable().optional(),
+  font_corpo: z.string().nullable().optional(),
   // Note
   note: z.string().nullable().optional(),
 })
 
 type PropertyManagerFormData = z.infer<typeof propertyManagerSchema>
+
+function LogoUploadField({ logoUrl, onLogoChange }: { logoUrl: string; onLogoChange: (url: string) => void }) {
+  const [uploading, setUploading] = useState(false)
+  const [dragOver, setDragOver] = useState(false)
+
+  const uploadFile = useCallback(async (file: File) => {
+    if (!file.type.startsWith('image/')) {
+      toast.error('Il file deve essere un\'immagine (JPG, PNG, WebP, SVG)')
+      return
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Il file non può superare 5MB')
+      return
+    }
+
+    setUploading(true)
+    try {
+      const ext = file.name.split('.').pop() || 'png'
+      const storagePath = `logos/${DEFAULT_TENANT_ID}/logo.${ext}`
+
+      const { error: uploadError } = await supabase.storage
+        .from('documenti')
+        .upload(storagePath, file, { upsert: true })
+
+      if (uploadError) throw uploadError
+
+      const { data: urlData } = supabase.storage
+        .from('documenti')
+        .getPublicUrl(storagePath)
+
+      onLogoChange(urlData.publicUrl)
+      toast.success('Logo caricato')
+    } catch (error) {
+      console.error('Errore upload logo:', error)
+      toast.error('Errore durante il caricamento')
+    } finally {
+      setUploading(false)
+    }
+  }, [onLogoChange])
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    setDragOver(false)
+    const file = e.dataTransfer.files[0]
+    if (file) uploadFile(file)
+  }, [uploadFile])
+
+  const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) uploadFile(file)
+  }, [uploadFile])
+
+  const handleRemove = useCallback(async () => {
+    if (logoUrl) {
+      try {
+        const path = logoUrl.split('/documenti/')[1]
+        if (path) {
+          await supabase.storage.from('documenti').remove([decodeURIComponent(path)])
+        }
+      } catch (e) {
+        // ignore cleanup errors
+      }
+    }
+    onLogoChange('')
+  }, [logoUrl, onLogoChange])
+
+  return (
+    <div className="space-y-2">
+      <p className="text-sm font-medium">Logo Aziendale</p>
+      {logoUrl ? (
+        <div className="relative inline-block border rounded-lg p-4 bg-muted/50">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={logoUrl}
+            alt="Logo aziendale"
+            className="max-h-24 object-contain"
+            onError={(e) => { (e.target as HTMLImageElement).src = '' }}
+          />
+          <Button
+            type="button"
+            variant="destructive"
+            size="icon"
+            className="absolute -top-2 -right-2 h-6 w-6"
+            onClick={handleRemove}
+          >
+            <X className="h-3.5 w-3.5" />
+          </Button>
+        </div>
+      ) : (
+        <div
+          onDragOver={(e) => { e.preventDefault(); setDragOver(true) }}
+          onDragLeave={() => setDragOver(false)}
+          onDrop={handleDrop}
+          className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors cursor-pointer ${
+            dragOver ? 'border-primary bg-primary/5' : 'border-muted-foreground/25 hover:border-muted-foreground/50'
+          }`}
+          onClick={() => document.getElementById('logo-upload-input')?.click()}
+        >
+          <input
+            id="logo-upload-input"
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handleFileSelect}
+          />
+          {uploading ? (
+            <div className="flex flex-col items-center gap-2">
+              <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+              <p className="text-sm text-muted-foreground">Caricamento...</p>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center gap-2">
+              <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center">
+                <ImageIcon className="h-6 w-6 text-muted-foreground" />
+              </div>
+              <div>
+                <p className="text-sm font-medium">Trascina il logo qui</p>
+                <p className="text-xs text-muted-foreground">oppure clicca per selezionare (JPG, PNG, SVG — max 5MB)</p>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
 
 export default function PropertyManagerPage() {
   const { data: propertyManager, isLoading } = usePropertyManager()
@@ -92,6 +236,9 @@ export default function PropertyManagerPage() {
       intestatario_conto: '',
       logo_url: '',
       colore_primario: '#3b82f6',
+      colore_secondario: '#1e293b',
+      font_titoli: 'Inter',
+      font_corpo: 'Inter',
       note: '',
     },
   })
@@ -127,10 +274,31 @@ export default function PropertyManagerPage() {
         intestatario_conto: propertyManager.intestatario_conto || '',
         logo_url: propertyManager.logo_url || '',
         colore_primario: propertyManager.colore_primario || '#3b82f6',
+        colore_secondario: propertyManager.colore_secondario || '#1e293b',
+        font_titoli: propertyManager.font_titoli || 'Inter',
+        font_corpo: propertyManager.font_corpo || 'Inter',
         note: propertyManager.note || '',
       })
     }
   }, [propertyManager, form])
+
+  // Load Google Fonts dynamically for preview
+  const fontTitoli = form.watch('font_titoli') || 'Inter'
+  const fontCorpo = form.watch('font_corpo') || 'Inter'
+
+  useEffect(() => {
+    const fontsToLoad = new Set([fontTitoli, fontCorpo].filter(Boolean))
+    fontsToLoad.forEach((font) => {
+      const linkId = `gfont-${font.replace(/\s+/g, '-')}`
+      if (!document.getElementById(linkId)) {
+        const link = document.createElement('link')
+        link.id = linkId
+        link.rel = 'stylesheet'
+        link.href = `https://fonts.googleapis.com/css2?family=${encodeURIComponent(font)}:wght@400;600;700&display=swap`
+        document.head.appendChild(link)
+      }
+    })
+  }, [fontTitoli, fontCorpo])
 
   const onSubmit = async (data: PropertyManagerFormData) => {
     try {
@@ -658,70 +826,181 @@ export default function PropertyManagerPage() {
               <Card className="max-w-2xl">
                 <CardHeader>
                   <CardTitle>Branding</CardTitle>
-                  <CardDescription>Logo e colori aziendali per documenti e comunicazioni</CardDescription>
+                  <CardDescription>Logo, colori e font aziendali per documenti e comunicazioni</CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <FormField
-                    control={form.control}
-                    name="logo_url"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>URL Logo</FormLabel>
-                        <FormControl>
-                          <Input placeholder="https://..." {...field} value={field.value || ''} />
-                        </FormControl>
-                        <FormDescription>
-                          Inserisci l&apos;URL del logo aziendale (sarà usato nei documenti)
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
+                <CardContent className="space-y-6">
+                  {/* Logo Upload */}
+                  <LogoUploadField
+                    logoUrl={form.watch('logo_url') || ''}
+                    onLogoChange={(url) => form.setValue('logo_url', url, { shouldDirty: true })}
                   />
-                  <FormField
-                    control={form.control}
-                    name="colore_primario"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Colore Primario</FormLabel>
-                        <FormControl>
-                          <div className="flex items-center gap-2">
-                            <Input
-                              type="color"
-                              className="w-16 h-10 p-1 cursor-pointer"
-                              {...field}
-                              value={field.value || '#3b82f6'}
-                            />
-                            <Input
-                              placeholder="#3b82f6"
-                              {...field}
-                              value={field.value || ''}
-                              className="flex-1"
-                            />
-                          </div>
-                        </FormControl>
-                        <FormDescription>
-                          Colore principale per documenti e comunicazioni
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  {form.watch('logo_url') && (
-                    <div className="mt-4">
-                      <p className="text-sm font-medium mb-2">Anteprima Logo</p>
-                      <div className="border rounded-lg p-4 bg-muted/50">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
+
+                  {/* Colori */}
+                  <div className="space-y-3">
+                    <p className="text-sm font-medium">Colori Aziendali</p>
+                    <div className="grid grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="colore_primario"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-xs">Primario</FormLabel>
+                            <FormControl>
+                              <div className="flex items-center gap-2">
+                                <Input
+                                  type="color"
+                                  className="w-12 h-9 p-1 cursor-pointer"
+                                  {...field}
+                                  value={field.value || '#3b82f6'}
+                                />
+                                <Input
+                                  placeholder="#3b82f6"
+                                  {...field}
+                                  value={field.value || ''}
+                                  className="flex-1 font-mono text-sm"
+                                />
+                              </div>
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="colore_secondario"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-xs">Secondario</FormLabel>
+                            <FormControl>
+                              <div className="flex items-center gap-2">
+                                <Input
+                                  type="color"
+                                  className="w-12 h-9 p-1 cursor-pointer"
+                                  {...field}
+                                  value={field.value || '#1e293b'}
+                                />
+                                <Input
+                                  placeholder="#1e293b"
+                                  {...field}
+                                  value={field.value || ''}
+                                  className="flex-1 font-mono text-sm"
+                                />
+                              </div>
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                    <FormDescription>
+                      Colori utilizzati in documenti, proposte e comunicazioni
+                    </FormDescription>
+                  </div>
+
+                  {/* Font */}
+                  <div className="space-y-3">
+                    <p className="text-sm font-medium">Font Documenti</p>
+                    <div className="grid grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="font_titoli"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-xs">Titoli</FormLabel>
+                            <Select
+                              value={field.value || 'Inter'}
+                              onValueChange={field.onChange}
+                            >
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Seleziona font" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {FONT_OPTIONS.map((f) => (
+                                  <SelectItem key={f.id} value={f.id}>
+                                    <span style={{ fontFamily: f.id }}>{f.label}</span>
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="font_corpo"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-xs">Corpo testo</FormLabel>
+                            <Select
+                              value={field.value || 'Inter'}
+                              onValueChange={field.onChange}
+                            >
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Seleziona font" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {FONT_OPTIONS.map((f) => (
+                                  <SelectItem key={f.id} value={f.id}>
+                                    <span style={{ fontFamily: f.id }}>{f.label}</span>
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                    <FormDescription>
+                      Font utilizzati nei documenti generati (Google Fonts)
+                    </FormDescription>
+                  </div>
+
+                  {/* Anteprima */}
+                  <div className="border rounded-lg p-4 bg-muted/30">
+                    <p className="text-xs text-muted-foreground mb-3">Anteprima</p>
+                    <div className="flex items-center gap-4">
+                      {form.watch('logo_url') && (
+                        // eslint-disable-next-line @next/next/no-img-element
                         <img
                           src={form.watch('logo_url') || ''}
-                          alt="Logo anteprima"
-                          className="max-h-24 object-contain"
-                          onError={(e) => {
-                            (e.target as HTMLImageElement).style.display = 'none'
-                          }}
+                          alt="Logo"
+                          className="h-10 object-contain"
+                          onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
                         />
+                      )}
+                      <div>
+                        <p
+                          className="font-semibold"
+                          style={{
+                            fontFamily: form.watch('font_titoli') || 'Inter',
+                            color: form.watch('colore_primario') || '#3b82f6',
+                          }}
+                        >
+                          {form.watch('ragione_sociale') || 'Nome Azienda'}
+                        </p>
+                        <p
+                          className="text-sm text-muted-foreground"
+                          style={{ fontFamily: form.watch('font_corpo') || 'Inter' }}
+                        >
+                          Esempio testo corpo documento
+                        </p>
                       </div>
                     </div>
-                  )}
+                    <div className="flex gap-2 mt-3">
+                      <div
+                        className="w-8 h-8 rounded"
+                        style={{ backgroundColor: form.watch('colore_primario') || '#3b82f6' }}
+                        title="Primario"
+                      />
+                      <div
+                        className="w-8 h-8 rounded"
+                        style={{ backgroundColor: form.watch('colore_secondario') || '#1e293b' }}
+                        title="Secondario"
+                      />
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
             </TabsContent>

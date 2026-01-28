@@ -981,6 +981,9 @@ export interface PropertyManager {
   // Logo e branding
   logo_url: string | null
   colore_primario: string | null
+  colore_secondario: string | null
+  font_titoli: string | null
+  font_corpo: string | null
   // Note
   note: string | null
   created_at: string
