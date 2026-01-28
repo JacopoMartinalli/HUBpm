@@ -30,7 +30,7 @@ import {
   useDuplicateDocumentTemplate,
   useSetDefaultTemplate,
 } from '@/lib/hooks/useDocumentTemplates'
-import { useDocumentiGenerati } from '@/lib/hooks/useDocumentiGenerati'
+import { useDocumentiGenerati, useDeleteDocumentoGenerato } from '@/lib/hooks/useDocumentiGenerati'
 import { CATEGORIE_TEMPLATE, GRUPPI_TEMPLATE, STATI_DOCUMENTO_GENERATO } from '@/constants'
 import type { DocumentTemplate, CategoriaTemplate } from '@/types/database'
 import { TemplateDialog } from './components/template-dialog'
@@ -44,6 +44,8 @@ export default function DocumentiPage() {
   const [templateToDelete, setTemplateToDelete] = useState<{ id: string; nome: string } | null>(null)
   const [previewDialogOpen, setPreviewDialogOpen] = useState(false)
   const [templateToPreview, setTemplateToPreview] = useState<DocumentTemplate | null>(null)
+  const [deleteDocDialogOpen, setDeleteDocDialogOpen] = useState(false)
+  const [docToDelete, setDocToDelete] = useState<{ id: string; titolo: string } | null>(null)
 
   // Data
   const { data: templates, isLoading: templatesLoading } = useDocumentTemplates({})
@@ -54,6 +56,7 @@ export default function DocumentiPage() {
   const updateTemplate = useUpdateDocumentTemplate()
   const duplicateTemplate = useDuplicateDocumentTemplate()
   const setDefaultTemplate = useSetDefaultTemplate()
+  const deleteDocumento = useDeleteDocumentoGenerato()
 
   // Template completion stats
   const templateStats = useMemo(() => {
@@ -117,6 +120,13 @@ export default function DocumentiPage() {
     await deleteTemplate.mutateAsync(templateToDelete.id)
     setDeleteDialogOpen(false)
     setTemplateToDelete(null)
+  }
+
+  const handleDeleteDocConfirm = async () => {
+    if (!docToDelete) return
+    await deleteDocumento.mutateAsync(docToDelete.id)
+    setDeleteDocDialogOpen(false)
+    setDocToDelete(null)
   }
 
   return (
@@ -232,25 +242,43 @@ export default function DocumentiPage() {
                                           </Badge>
                                         </div>
                                         <div className="flex items-center gap-1 flex-shrink-0 ml-2">
-                                          {doc.file_url && (
-                                            <a
-                                              href={doc.file_url}
-                                              target="_blank"
-                                              rel="noopener noreferrer"
-                                              title="Apri documento"
-                                            >
-                                              <Button variant="ghost" size="icon" className="h-7 w-7">
-                                                <ExternalLink className="h-3.5 w-3.5" />
-                                              </Button>
-                                            </a>
+                                          {doc.file_url ? (
+                                            <>
+                                              {/* Apri in nuova tab */}
+                                              <a
+                                                href={doc.file_url}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                title="Apri PDF"
+                                              >
+                                                <Button variant="ghost" size="icon" className="h-7 w-7">
+                                                  <Eye className="h-3.5 w-3.5" />
+                                                </Button>
+                                              </a>
+                                              {/* Scarica */}
+                                              <a href={doc.file_url} download title="Scarica PDF">
+                                                <Button variant="ghost" size="icon" className="h-7 w-7">
+                                                  <Download className="h-3.5 w-3.5" />
+                                                </Button>
+                                              </a>
+                                            </>
+                                          ) : (
+                                            <Badge variant="outline" className="text-xs text-amber-600 border-amber-300">
+                                              PDF non disponibile
+                                            </Badge>
                                           )}
-                                          {doc.file_url && (
-                                            <a href={doc.file_url} download title="Scarica">
-                                              <Button variant="ghost" size="icon" className="h-7 w-7">
-                                                <Download className="h-3.5 w-3.5" />
-                                              </Button>
-                                            </a>
-                                          )}
+                                          <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-7 w-7 text-destructive hover:text-destructive"
+                                            onClick={() => {
+                                              setDocToDelete({ id: doc.id, titolo: doc.titolo })
+                                              setDeleteDocDialogOpen(true)
+                                            }}
+                                            title="Elimina"
+                                          >
+                                            <Trash2 className="h-3.5 w-3.5" />
+                                          </Button>
                                         </div>
                                       </div>
                                     )
@@ -476,6 +504,16 @@ export default function DocumentiPage() {
         open={previewDialogOpen}
         onOpenChange={setPreviewDialogOpen}
         template={templateToPreview}
+      />
+
+      <ConfirmDialog
+        open={deleteDocDialogOpen}
+        onOpenChange={setDeleteDocDialogOpen}
+        title="Elimina documento"
+        description={`Sei sicuro di voler eliminare "${docToDelete?.titolo}"? Questa azione non può essere annullata.`}
+        confirmText="Elimina"
+        variant="destructive"
+        onConfirm={handleDeleteDocConfirm}
       />
     </div>
   )

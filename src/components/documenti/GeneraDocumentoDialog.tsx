@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { FileText, Loader2 } from 'lucide-react'
+import { FileText, Loader2, Download } from 'lucide-react'
 import {
   Dialog,
   DialogContent,
@@ -24,8 +24,9 @@ import { useDocumentTemplates } from '@/lib/hooks/useDocumentTemplates'
 import { useCreateDocumentoGenerato } from '@/lib/hooks/useDocumentiGenerati'
 import { usePropertyManager } from '@/lib/hooks/use-property-manager'
 import { TemplatePreview } from '@/components/templates/preview/TemplatePreview'
+import { generateAndUploadPdf, downloadPdf } from '@/lib/pdf'
 import type { TemplateContext, PropostaItem } from '@/lib/services/template-resolver'
-import type { Contatto, Proprieta, CategoriaTemplate, DocumentTemplate } from '@/types/database'
+import type { Contatto, Proprieta, CategoriaTemplate } from '@/types/database'
 import { CATEGORIE_TEMPLATE } from '@/constants'
 import { toast } from 'sonner'
 
@@ -65,6 +66,7 @@ export function GeneraDocumentoDialog({
 }: GeneraDocumentoDialogProps) {
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>('')
   const [titolo, setTitolo] = useState('')
+  const [isGenerating, setIsGenerating] = useState(false)
 
   // Fetch templates per la categoria
   const { data: templates, isLoading: templatesLoading } = useDocumentTemplates({ categoria, attivo: true })
@@ -131,7 +133,21 @@ export function GeneraDocumentoDialog({
       return
     }
 
+    setIsGenerating(true)
+
     try {
+      const documentTitle = titolo || titoloDefault
+      const templateContent = selectedTemplate.contenuto as Record<string, unknown>
+
+      // 1. Genera e carica il PDF
+      const { url: fileUrl, storagePath } = await generateAndUploadPdf({
+        content: templateContent,
+        context: templateContext,
+        fileName: documentTitle,
+        showHeaderFooter: true,
+      })
+
+      // 2. Crea il record nel database con l'URL del PDF
       await createDocumento.mutateAsync({
         template_id: selectedTemplate.id,
         template_nome: selectedTemplate.nome,
@@ -139,9 +155,11 @@ export function GeneraDocumentoDialog({
         contatto_id: cliente?.id,
         proprieta_id: proprieta?.id,
         proposta_id: proposta?.id,
-        titolo: titolo || titoloDefault,
+        titolo: documentTitle,
         categoria: categoria,
         stato: 'generato',
+        file_url: fileUrl,
+        file_nome: `${documentTitle}.pdf`,
         dati_snapshot: {
           cliente: cliente ? {
             nome: cliente.nome,
@@ -172,15 +190,39 @@ export function GeneraDocumentoDialog({
             email: azienda.email,
             telefono: azienda.telefono,
           } : null,
+          storage_path: storagePath,
         },
       })
 
-      toast.success('Documento generato con successo')
+      toast.success('Documento generato e salvato con successo')
       onOpenChange(false)
       onSuccess?.()
     } catch (error) {
       console.error('Errore generazione documento:', error)
       toast.error('Errore nella generazione del documento')
+    } finally {
+      setIsGenerating(false)
+    }
+  }
+
+  // Download diretto senza salvare nel DB
+  const handleDownloadPreview = async () => {
+    if (!selectedTemplate) return
+
+    try {
+      setIsGenerating(true)
+      await downloadPdf({
+        content: selectedTemplate.contenuto as Record<string, unknown>,
+        context: templateContext,
+        fileName: titolo || titoloDefault,
+        showHeaderFooter: true,
+      })
+      toast.success('PDF scaricato')
+    } catch (error) {
+      console.error('Errore download PDF:', error)
+      toast.error('Errore nel download del PDF')
+    } finally {
+      setIsGenerating(false)
     }
   }
 
@@ -306,18 +348,26 @@ export function GeneraDocumentoDialog({
             Annulla
           </Button>
           <Button
-            onClick={handleGenera}
-            disabled={!selectedTemplate || createDocumento.isPending}
+            variant="outline"
+            onClick={handleDownloadPreview}
+            disabled={!selectedTemplate || isGenerating}
           >
-            {createDocumento.isPending ? (
+            <Download className="h-4 w-4 mr-2" />
+            Scarica Anteprima
+          </Button>
+          <Button
+            onClick={handleGenera}
+            disabled={!selectedTemplate || isGenerating || createDocumento.isPending}
+          >
+            {isGenerating || createDocumento.isPending ? (
               <>
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Generazione...
+                Generazione PDF...
               </>
             ) : (
               <>
                 <FileText className="h-4 w-4 mr-2" />
-                Genera Documento
+                Genera e Salva
               </>
             )}
           </Button>

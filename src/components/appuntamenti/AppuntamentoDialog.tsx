@@ -110,7 +110,7 @@ export function AppuntamentoDialog({
     const updateAppuntamento = useUpdateAppuntamento()
     const deleteAppuntamento = useDeleteAppuntamento()
 
-    const { data: contatti } = useContatti({ tipo: 'lead' })
+    const { data: contatti } = useContatti('lead')
 
     const { register, handleSubmit, reset, watch, setValue } = useForm<FormData>({
         defaultValues: {
