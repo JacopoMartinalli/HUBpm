@@ -73,7 +73,8 @@ export function useProposteByProprieta(proprietaId: string | undefined) {
         .from('proposte_commerciali')
         .select(`
           *,
-          contatto:contatto_id(id, nome, cognome, email, telefono),
+          proprieta:proprieta_id(id, nome, indirizzo, citta, fase),
+          contatto:contatto_id(id, nome, cognome, email, telefono, indirizzo, citta, cap, codice_fiscale, partita_iva),
           items:proposte_commerciali_items(
             id,
             nome,

@@ -13,6 +13,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge'
 import { PropostaCard } from './proposta-card'
 import { CreaPropostaDialog } from './crea-proposta-dialog'
+import { PropostaDetailDialog } from './proposta-detail-dialog'
 import { GeneraDocumentoDialog } from '@/components/documenti/GeneraDocumentoDialog'
 import {
   useProposteByProprieta,
@@ -40,6 +41,7 @@ export function ProposteProprietaView({
   const [deletePropostaId, setDeletePropostaId] = useState<string | null>(null)
   const [accettaPropostaId, setAccettaPropostaId] = useState<string | null>(null)
   const [propostaPerDocumento, setPropostaPerDocumento] = useState<PropostaCommerciale | null>(null)
+  const [propostaDetail, setPropostaDetail] = useState<PropostaCommerciale | null>(null)
 
   const {
     data: proposte,
@@ -92,8 +94,10 @@ export function ProposteProprietaView({
   }
 
   const handleViewProposta = (id: string) => {
-    // TODO: Navigazione a dettaglio proposta o apertura modale
-    console.log('View proposta:', id)
+    const proposta = proposte?.find(p => p.id === id)
+    if (proposta) {
+      setPropostaDetail(proposta)
+    }
   }
 
   // Statistiche
@@ -293,6 +297,13 @@ export function ProposteProprietaView({
           onSuccess={() => setPropostaPerDocumento(null)}
         />
       )}
+
+      {/* Dialog dettaglio proposta */}
+      <PropostaDetailDialog
+        proposta={propostaDetail}
+        open={!!propostaDetail}
+        onOpenChange={(open) => !open && setPropostaDetail(null)}
+      />
     </div>
   )
 }
