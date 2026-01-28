@@ -298,14 +298,25 @@ export function getEsitoColor(esiti: readonly { id: string; color: string }[], i
 // DOCUMENT TEMPLATES
 // ============================================
 
+export const GRUPPI_TEMPLATE = [
+  { id: 'commerciale', label: 'Commerciale', icon: '📨', description: 'Documenti pre-vendita da inviare al cliente' },
+  { id: 'contrattualistica', label: 'Contrattualistica', icon: '📝', description: 'Documenti legali da firmare' },
+  { id: 'operativo', label: 'Operativo', icon: '🏠', description: 'Documenti per la gestione proprietà' },
+  { id: 'reportistica', label: 'Reportistica', icon: '📊', description: 'Documenti periodici' },
+] as const
+
 export const CATEGORIE_TEMPLATE = [
-  { id: 'preventivo', label: 'Preventivo', icon: '💰', description: 'Preventivo servizi da inviare al cliente', formato_output: 'email' as const },
-  { id: 'proposta', label: 'Proposta Commerciale', icon: '📋', description: 'Proposta commerciale con dettaglio servizi', formato_output: 'email' as const },
-  { id: 'mandato_pf', label: 'Mandato Persona Fisica', icon: '🤝', description: 'Mandato di gestione per persona fisica', formato_output: 'pdf_a4' as const },
-  { id: 'mandato_pg', label: 'Mandato Persona Giuridica', icon: '🏢', description: 'Mandato di gestione per società', formato_output: 'pdf_a4' as const },
-  { id: 'procura', label: 'Procura', icon: '📜', description: 'Procura allegata al mandato', formato_output: 'pdf_a4' as const },
-  { id: 'elenco_dotazioni', label: 'Elenco Dotazioni', icon: '🛋️', description: 'Inventario dotazioni della proprietà', formato_output: 'pdf_a4' as const },
-  { id: 'report_mensile', label: 'Report Mensile', icon: '📊', description: 'Report periodico attività e risultati', formato_output: 'email' as const },
+  // Commerciale
+  { id: 'preventivo', label: 'Preventivo', icon: '💰', description: 'Preventivo servizi da inviare al cliente', formato_output: 'email' as const, gruppo: 'commerciale' as const },
+  { id: 'proposta', label: 'Proposta Commerciale', icon: '📋', description: 'Proposta commerciale con dettaglio servizi', formato_output: 'email' as const, gruppo: 'commerciale' as const },
+  // Contrattualistica
+  { id: 'mandato_pf', label: 'Mandato Persona Fisica', icon: '🤝', description: 'Mandato di gestione per persona fisica', formato_output: 'pdf_a4' as const, gruppo: 'contrattualistica' as const },
+  { id: 'mandato_pg', label: 'Mandato Persona Giuridica', icon: '🏢', description: 'Mandato di gestione per società', formato_output: 'pdf_a4' as const, gruppo: 'contrattualistica' as const },
+  { id: 'procura', label: 'Procura', icon: '📜', description: 'Procura allegata al mandato', formato_output: 'pdf_a4' as const, gruppo: 'contrattualistica' as const },
+  // Operativo
+  { id: 'elenco_dotazioni', label: 'Elenco Dotazioni', icon: '🛋️', description: 'Inventario dotazioni della proprietà', formato_output: 'pdf_a4' as const, gruppo: 'operativo' as const },
+  // Reportistica
+  { id: 'report_mensile', label: 'Report Mensile', icon: '📊', description: 'Report periodico attività e risultati', formato_output: 'email' as const, gruppo: 'reportistica' as const },
 ] as const
 
 export const STATI_DOCUMENTO_GENERATO = [

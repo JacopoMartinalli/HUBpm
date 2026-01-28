@@ -9,7 +9,8 @@ import {
   MoreVertical,
   Trash2,
   Eye,
-  Copy
+  Copy,
+  FileDown
 } from 'lucide-react'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -30,6 +31,7 @@ interface PropostaCardProps {
   onDelete?: (id: string) => void
   onDuplica?: (id: string) => void
   onCambiaStato?: (id: string, stato: StatoProposta) => void
+  onGeneraDocumento?: (proposta: PropostaCommerciale) => void
   compact?: boolean
 }
 
@@ -77,6 +79,7 @@ export function PropostaCard({
   onDelete,
   onDuplica,
   onCambiaStato,
+  onGeneraDocumento,
   compact = false
 }: PropostaCardProps) {
   const statoConfig = STATO_CONFIG[proposta.stato]
@@ -149,6 +152,12 @@ export function PropostaCard({
                 <Eye className="h-4 w-4 mr-2" />
                 Visualizza
               </DropdownMenuItem>
+              {onGeneraDocumento && (
+                <DropdownMenuItem onClick={() => onGeneraDocumento(proposta)}>
+                  <FileDown className="h-4 w-4 mr-2" />
+                  Genera Preventivo
+                </DropdownMenuItem>
+              )}
               {proposta.stato === 'bozza' && onDuplica && (
                 <DropdownMenuItem onClick={() => onDuplica(proposta.id)}>
                   <Copy className="h-4 w-4 mr-2" />

@@ -120,7 +120,23 @@ function renderBlockContent(blockType: string, config: Record<string, unknown>, 
             )
         }
 
-        case 'serviziTabella':
+        case 'serviziTabella': {
+            const items = (resolvedData?.items as Array<{ nome: string; descrizione?: string | null; quantita: number; prezzo_unitario: number; prezzo_totale: number }>) || []
+            const hasRealItems = items.length > 0
+            const isFallback = !hasRealItems
+
+            // Fallback items per anteprima
+            const fallbackItems = [
+                { nome: 'Servizio esempio 1', descrizione: 'Descrizione servizio', quantita: 1, prezzo_unitario: 500, prezzo_totale: 500 },
+                { nome: 'Servizio esempio 2', descrizione: null, quantita: 2, prezzo_unitario: 150, prezzo_totale: 300 },
+            ]
+
+            const displayItems = hasRealItems ? items : fallbackItems
+
+            const formatPrice = (value: number) => {
+                return new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' }).format(value)
+            }
+
             return (
                 <div className="my-4">
                     <table className="w-full border-collapse text-sm">
@@ -134,24 +150,29 @@ function renderBlockContent(blockType: string, config: Record<string, unknown>, 
                             </tr>
                         </thead>
                         <tbody>
-                            <tr>
-                                <td className="p-3 border border-gray-200 text-amber-600">Setup Iniziale</td>
-                                {config.showQuantity !== false && (
-                                    <td className="text-center p-3 border border-gray-200 text-amber-600">1</td>
-                                )}
-                                <td className="text-right p-3 border border-gray-200 text-amber-600">€ 500,00</td>
-                            </tr>
-                            <tr>
-                                <td className="p-3 border border-gray-200 text-amber-600">Gestione Mensile</td>
-                                {config.showQuantity !== false && (
-                                    <td className="text-center p-3 border border-gray-200 text-amber-600">12</td>
-                                )}
-                                <td className="text-right p-3 border border-gray-200 text-amber-600">20%</td>
-                            </tr>
+                            {displayItems.map((item, index) => (
+                                <tr key={index}>
+                                    <td className={`p-3 border border-gray-200 ${isFallback ? 'text-amber-600' : ''}`}>
+                                        <div>{item.nome}</div>
+                                        {config.showDescription !== false && item.descrizione && (
+                                            <div className="text-xs text-gray-500 mt-0.5">{item.descrizione}</div>
+                                        )}
+                                    </td>
+                                    {config.showQuantity !== false && (
+                                        <td className={`text-center p-3 border border-gray-200 ${isFallback ? 'text-amber-600' : ''}`}>
+                                            {item.quantita}
+                                        </td>
+                                    )}
+                                    <td className={`text-right p-3 border border-gray-200 ${isFallback ? 'text-amber-600' : ''}`}>
+                                        {formatPrice(item.prezzo_totale)}
+                                    </td>
+                                </tr>
+                            ))}
                         </tbody>
                     </table>
                 </div>
             )
+        }
 
         case 'totali': {
             const data = d(resolvedData, FALLBACK.totali)

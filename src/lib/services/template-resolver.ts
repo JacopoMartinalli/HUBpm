@@ -2,6 +2,14 @@ import type { PropertyManager, Contatto, Proprieta } from '@/types/database'
 import { TIPOLOGIE_PROPRIETA } from '@/constants'
 import { formatCurrency, formatPercent } from '@/lib/utils'
 
+export interface PropostaItem {
+  nome: string
+  descrizione?: string | null
+  quantita: number
+  prezzo_unitario: number
+  prezzo_totale: number
+}
+
 export interface TemplateContext {
   azienda?: PropertyManager | null
   cliente?: Contatto | null
@@ -12,6 +20,7 @@ export interface TemplateContext {
     totale?: number
     subtotale?: number
     sconto?: number
+    items?: PropostaItem[]
   } | null
   documento?: {
     numero?: string
@@ -179,6 +188,11 @@ export function resolveBlockData(blockType: string, ctx: TemplateContext): Recor
         subtotale: ctx.proposta?.subtotale != null ? formatCurrency(ctx.proposta.subtotale) : '',
         sconto: ctx.proposta?.sconto != null ? formatCurrency(ctx.proposta.sconto) : '',
         totale: ctx.proposta?.totale != null ? formatCurrency(ctx.proposta.totale) : '',
+      }
+    case 'serviziTabella':
+      return {
+        items: ctx.proposta?.items || [],
+        hasItems: (ctx.proposta?.items?.length || 0) > 0,
       }
     default:
       return {}

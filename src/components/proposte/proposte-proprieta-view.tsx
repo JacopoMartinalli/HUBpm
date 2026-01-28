@@ -13,6 +13,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge'
 import { PropostaCard } from './proposta-card'
 import { CreaPropostaDialog } from './crea-proposta-dialog'
+import { GeneraDocumentoDialog } from '@/components/documenti/GeneraDocumentoDialog'
 import {
   useProposteByProprieta,
   useCambiaStatoProposta,
@@ -20,7 +21,7 @@ import {
   useDeleteProposta
 } from '@/lib/hooks'
 import { ConfirmDialog } from '@/components/shared'
-import type { StatoProposta } from '@/types/database'
+import type { StatoProposta, PropostaCommerciale } from '@/types/database'
 
 interface ProposteProprietaViewProps {
   proprietaId: string
@@ -38,6 +39,7 @@ export function ProposteProprietaView({
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
   const [deletePropostaId, setDeletePropostaId] = useState<string | null>(null)
   const [accettaPropostaId, setAccettaPropostaId] = useState<string | null>(null)
+  const [propostaPerDocumento, setPropostaPerDocumento] = useState<PropostaCommerciale | null>(null)
 
   const {
     data: proposte,
@@ -226,6 +228,7 @@ export function ProposteProprietaView({
               onView={handleViewProposta}
               onDelete={(id) => setDeletePropostaId(id)}
               onCambiaStato={handleCambiaStato}
+              onGeneraDocumento={(p) => setPropostaPerDocumento(p)}
             />
           ))}
         </div>
@@ -262,6 +265,34 @@ export function ProposteProprietaView({
         confirmText="Conferma Accettazione"
         onConfirm={handleAccettaProposta}
       />
+
+      {/* Dialog genera documento */}
+      {propostaPerDocumento && (
+        <GeneraDocumentoDialog
+          open={!!propostaPerDocumento}
+          onOpenChange={(open) => !open && setPropostaPerDocumento(null)}
+          categoria="preventivo"
+          cliente={propostaPerDocumento.contatto}
+          proprieta={propostaPerDocumento.proprieta}
+          proposta={{
+            id: propostaPerDocumento.id,
+            numero: propostaPerDocumento.numero,
+            data: propostaPerDocumento.data_creazione,
+            totale: propostaPerDocumento.totale,
+            subtotale: propostaPerDocumento.subtotale,
+            sconto_percentuale: propostaPerDocumento.sconto_percentuale,
+            sconto_fisso: propostaPerDocumento.sconto_fisso,
+            items: propostaPerDocumento.items?.map(item => ({
+              nome: item.nome,
+              descrizione: item.descrizione,
+              quantita: item.quantita,
+              prezzo_unitario: item.prezzo_unitario,
+              prezzo_totale: item.prezzo_totale,
+            })),
+          }}
+          onSuccess={() => setPropostaPerDocumento(null)}
+        />
+      )}
     </div>
   )
 }
