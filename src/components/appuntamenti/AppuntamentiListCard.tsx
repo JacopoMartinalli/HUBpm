@@ -5,6 +5,8 @@ import Link from 'next/link'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { useAppuntamenti } from '@/lib/hooks/use-appuntamenti'
+import { AppuntamentoDialog } from './AppuntamentoDialog'
+import type { Appuntamento } from '@/types/database'
 import {
     Clock,
     MapPin,
@@ -29,6 +31,13 @@ export function AppuntamentiListCard({
     className
 }: AppuntamentiListCardProps) {
     const [dataInizio] = useState(new Date().toISOString())
+    const [selectedApp, setSelectedApp] = useState<Appuntamento | null>(null)
+    const [isDialogOpen, setIsDialogOpen] = useState(false)
+
+    const handleEdit = (app: Appuntamento) => {
+        setSelectedApp(app)
+        setIsDialogOpen(true)
+    }
 
     const { data: appuntamenti, isLoading, error, isError } = useAppuntamenti({
         contattoId,
@@ -93,7 +102,8 @@ export function AppuntamentiListCard({
                         {activeAppuntamenti.map((app) => (
                             <div
                                 key={app.id}
-                                className="flex items-center justify-between p-3 rounded-lg bg-muted/50 border hover:bg-muted/70 transition-colors"
+                                onClick={() => handleEdit(app)}
+                                className="flex items-center justify-between p-3 rounded-lg bg-muted/50 border hover:bg-muted/70 transition-colors cursor-pointer"
                             >
                                 <div className="flex items-center gap-3">
                                     <div className={`
@@ -131,6 +141,16 @@ export function AppuntamentiListCard({
                     </div>
                 )}
             </CardContent>
+
+            <AppuntamentoDialog
+                open={isDialogOpen}
+                onOpenChange={setIsDialogOpen}
+                appuntamento={selectedApp}
+                onClose={() => {
+                    setIsDialogOpen(false)
+                    setSelectedApp(null)
+                }}
+            />
         </Card>
     )
 }

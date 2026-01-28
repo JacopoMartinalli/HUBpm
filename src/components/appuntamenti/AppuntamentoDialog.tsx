@@ -110,7 +110,8 @@ export function AppuntamentoDialog({
     const updateAppuntamento = useUpdateAppuntamento()
     const deleteAppuntamento = useDeleteAppuntamento()
 
-    const { data: contatti } = useContatti('lead')
+    const { data: allContatti } = useContatti()
+    const contatti = allContatti?.filter(c => c.tipo === 'lead' || c.tipo === 'cliente')
 
     const { register, handleSubmit, reset, watch, setValue } = useForm<FormData>({
         defaultValues: {
@@ -131,6 +132,14 @@ export function AppuntamentoDialog({
 
     const tuttoIlGiorno = watch('tutto_il_giorno')
     const tipo = watch('tipo')
+    const dataInizio = watch('data_inizio')
+
+    // Auto-set data_fine when data_inizio changes
+    useEffect(() => {
+        if (dataInizio) {
+            setValue('data_fine', dataInizio)
+        }
+    }, [dataInizio, setValue])
 
     // Reset form when dialog opens/closes or appuntamento changes
     useEffect(() => {
@@ -291,7 +300,7 @@ export function AppuntamentoDialog({
                             <SelectContent>
                                 {contatti?.map((contatto) => (
                                     <SelectItem key={contatto.id} value={contatto.id}>
-                                        {contatto.nome} {contatto.cognome}
+                                        {contatto.nome} {contatto.cognome} ({contatto.tipo === 'cliente' ? 'Cliente' : 'Lead'})
                                     </SelectItem>
                                 ))}
                             </SelectContent>
@@ -315,6 +324,7 @@ export function AppuntamentoDialog({
                             <Input
                                 id="data_inizio"
                                 type="date"
+                                min={new Date().toISOString().split('T')[0]}
                                 {...register('data_inizio', { required: true })}
                             />
                         </div>
@@ -324,7 +334,17 @@ export function AppuntamentoDialog({
                                 <Input
                                     id="ora_inizio"
                                     type="time"
-                                    {...register('ora_inizio')}
+                                    {...register('ora_inizio', {
+                                        onChange: (e) => {
+                                            const startTime = e.target.value
+                                            if (startTime) {
+                                                const [hours, minutes] = startTime.split(':').map(Number)
+                                                const newHours = (hours + 1) % 24
+                                                const newTime = `${String(newHours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`
+                                                setValue('ora_fine', newTime)
+                                            }
+                                        }
+                                    })}
                                 />
                             </div>
                         )}
@@ -336,6 +356,7 @@ export function AppuntamentoDialog({
                             <Input
                                 id="data_fine"
                                 type="date"
+                                min={dataInizio || new Date().toISOString().split('T')[0]}
                                 {...register('data_fine', { required: true })}
                             />
                         </div>

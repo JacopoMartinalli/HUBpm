@@ -7,22 +7,27 @@ import { taskKeys } from './use-task'
 export const contattiKeys = {
   all: ['contatti'] as const,
   lists: () => [...contattiKeys.all, 'list'] as const,
-  list: (tipo: TipoContatto) => [...contattiKeys.lists(), tipo] as const,
+  list: (tipo: TipoContatto | 'all') => [...contattiKeys.lists(), tipo] as const,
   details: () => [...contattiKeys.all, 'detail'] as const,
   detail: (id: string) => [...contattiKeys.details(), id] as const,
 }
 
-// Lista contatti per tipo
-export function useContatti(tipo: TipoContatto) {
+// Lista contatti per tipo (o tutti se tipo è null/undefined)
+export function useContatti(tipo?: TipoContatto | null) {
   return useQuery({
-    queryKey: contattiKeys.list(tipo),
+    queryKey: contattiKeys.list(tipo ?? 'all' as any), // Use 'all' as key part if no type
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from('contatti')
         .select('*')
         .eq('tenant_id', DEFAULT_TENANT_ID)
-        .eq('tipo', tipo)
         .order('created_at', { ascending: false })
+
+      if (tipo) {
+        query = query.eq('tipo', tipo)
+      }
+
+      const { data, error } = await query
 
       if (error) throw error
       return data as Contatto[]

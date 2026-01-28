@@ -162,6 +162,12 @@ export default function CalendarioPage() {
                         selectMirror={true}
                         dayMaxEvents={true}
                         editable={true}
+                        selectAllow={(selectInfo) => {
+                            return selectInfo.start >= new Date(new Date().setHours(0, 0, 0, 0))
+                        }}
+                        eventAllow={(dropInfo, draggedEvent) => {
+                            return dropInfo.start >= new Date(new Date().setHours(0, 0, 0, 0))
+                        }}
                         datesSet={handleDatesSet}
                         eventClick={handleEventClick}
                         select={handleDateSelect}
