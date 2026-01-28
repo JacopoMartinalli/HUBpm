@@ -90,8 +90,8 @@ const navigation: NavSection[] = [
         icon: Package,
       },
       {
-        title: 'Template Documenti',
-        href: '/templates',
+        title: 'Documenti',
+        href: '/documenti',
         icon: FileText,
       },
     ],

@@ -1,1 +1,6 @@
 export { PipelineProprietaCard } from './pipeline-proprieta-card'
+export { PanoramicaSection } from './sections/panoramica-section'
+export { CommercialeSection } from './sections/commerciale-section'
+export { StrutturaSection } from './sections/struttura-section'
+export { OperativoSection } from './sections/operativo-section'
+export { TeamSection } from './sections/team-section'

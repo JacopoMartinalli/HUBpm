@@ -65,6 +65,18 @@ const DOCUMENTI_CLIENTE = [
   { nome: 'Privacy firmata', categoria: 'contratti', obbligatorio: true },
 ]
 
+// Documenti fissi per ogni proprietà
+const DOCUMENTI_PROPRIETA = [
+  { nome: 'Visura catastale', categoria: 'catastale', obbligatorio: true },
+  { nome: 'Planimetria', categoria: 'catastale', obbligatorio: true },
+  { nome: 'APE (Attestato Prestazione Energetica)', categoria: 'catastale', obbligatorio: true },
+  { nome: 'SCIA', categoria: 'legale', obbligatorio: true },
+  { nome: 'CIR / CIN', categoria: 'legale', obbligatorio: true },
+  { nome: 'Contratto di gestione', categoria: 'contratti', obbligatorio: true },
+  { nome: 'Assicurazione', categoria: 'legale', obbligatorio: false },
+  { nome: 'Foto strutturali', categoria: 'operativo', obbligatorio: false },
+]
+
 const STATO_CONFIG = {
   mancante: { label: 'Mancante', icon: X, color: 'bg-red-100 text-red-800' },
   richiesto: { label: 'Richiesto', icon: Clock, color: 'bg-yellow-100 text-yellow-800' },
@@ -110,7 +122,7 @@ export function DocumentiList({ tipo, entityId }: DocumentiListProps) {
       if (fetchError) throw fetchError
 
       if (!data || data.length === 0) {
-        const templates = tipo === 'cliente' ? DOCUMENTI_CLIENTE : []
+        const templates = tipo === 'cliente' ? DOCUMENTI_CLIENTE : DOCUMENTI_PROPRIETA
         if (templates.length > 0) {
           const toInsert = templates.map(t => ({
             tenant_id: DEFAULT_TENANT_ID,

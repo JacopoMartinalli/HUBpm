@@ -241,10 +241,14 @@ export function useMarkLeadAsLost() {
   })
 }
 
-// Tipo esteso per clienti con conteggio proprietà
-interface ContattoConProprieta extends Contatto {
-  proprieta_count?: number
-  proprieta_operative?: number
+// Tipo esteso per clienti con conteggio proprietà per gruppo fase
+export interface ClienteConProprieta extends Contatto {
+  proprieta_count: number
+  proprieta_onboarding: number   // P0, P1, P2
+  proprieta_avvio: number        // P3
+  proprieta_online: number       // P4
+  proprieta_cessate: number      // P5
+  gruppo_cliente: 'onboarding' | 'avvio' | 'online' | 'cessato' | 'nessuna'
 }
 
 // Clienti derivati: contatti (lead o clienti) che hanno almeno una proprietà in fase P3+
@@ -252,7 +256,6 @@ export function useClientiConProprieta() {
   return useQuery({
     queryKey: [...contattiKeys.all, 'con-proprieta'],
     queryFn: async () => {
-      // Query per ottenere contatti con proprietà operative (P3 o P4)
       const { data, error } = await supabase
         .from('contatti')
         .select(`
@@ -260,24 +263,37 @@ export function useClientiConProprieta() {
           proprieta!proprieta_contatto_id_fkey(id, fase)
         `)
         .eq('tenant_id', DEFAULT_TENANT_ID)
-        .in('tipo', ['lead', 'cliente'])
+        .eq('tipo', 'cliente')
 
       if (error) throw error
 
-      // Filtra solo quelli che hanno almeno una proprietà in P3 o P4
-      const clientiConProprieta = (data || [])
+      const clienti = (data || [])
         .map((contatto: Contatto & { proprieta?: Array<{ id: string; fase: string }> }) => {
           const proprieta = contatto.proprieta || []
-          const proprietaOperative = proprieta.filter(p => ['P3', 'P4'].includes(p.fase)).length
+          const onboarding = proprieta.filter(p => ['P0', 'P1', 'P2'].includes(p.fase)).length
+          const avvio = proprieta.filter(p => p.fase === 'P3').length
+          const online = proprieta.filter(p => p.fase === 'P4').length
+          const cessate = proprieta.filter(p => p.fase === 'P5').length
+
+          // Gruppo = fase più avanzata tra le proprietà attive
+          let gruppo: ClienteConProprieta['gruppo_cliente'] = 'nessuna'
+          if (online > 0) gruppo = 'online'
+          else if (avvio > 0) gruppo = 'avvio'
+          else if (onboarding > 0) gruppo = 'onboarding'
+          else if (cessate > 0) gruppo = 'cessato'
+
           return {
             ...contatto,
             proprieta_count: proprieta.length,
-            proprieta_operative: proprietaOperative,
-          }
+            proprieta_onboarding: onboarding,
+            proprieta_avvio: avvio,
+            proprieta_online: online,
+            proprieta_cessate: cessate,
+            gruppo_cliente: gruppo,
+          } as ClienteConProprieta
         })
-        .filter((c: ContattoConProprieta) => (c.proprieta_operative || 0) > 0)
 
-      return clientiConProprieta as ContattoConProprieta[]
+      return clienti
     },
   })
 }

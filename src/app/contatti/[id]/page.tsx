@@ -28,7 +28,7 @@ export default function ContattoDetailPage() {
     return <LoadingSpinner fullScreen />
   }
 
-  if (!contatto || contatto.tipo !== 'partner') {
+  if (!contatto) {
     return (
       <div className="flex flex-col items-center justify-center h-96">
         <p className="text-muted-foreground">Contatto non trovato</p>

@@ -1,42 +1,69 @@
 'use client'
 
+import { useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Building2, Users, Briefcase } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { PageHeader, DataTable, Column } from '@/components/shared'
-import { useClienti, useClientiConProprieta } from '@/lib/hooks'
+import { useClientiConProprieta } from '@/lib/hooks'
 import { formatDate } from '@/lib/utils'
-import type { Contatto } from '@/types/database'
+import type { ClienteConProprieta } from '@/lib/hooks/use-contatti'
 
-// Tipo esteso per clienti con conteggio proprietà
-interface ClienteConProprieta extends Contatto {
-  proprieta_count?: number
-  proprieta_operative?: number
+const TABS = [
+  { id: 'tutti', label: 'Tutti' },
+  { id: 'onboarding', label: 'Onboarding' },
+  { id: 'avvio', label: 'In Avvio' },
+  { id: 'online', label: 'Online' },
+  { id: 'cessato', label: 'Cessati' },
+] as const
+
+function ProprietaBadges({ cliente }: { cliente: ClienteConProprieta }) {
+  const badges = []
+  if (cliente.proprieta_online > 0)
+    badges.push({ label: `${cliente.proprieta_online} online`, className: 'bg-green-100 text-green-700 border-0' })
+  if (cliente.proprieta_avvio > 0)
+    badges.push({ label: `${cliente.proprieta_avvio} in avvio`, className: 'bg-blue-100 text-blue-700 border-0' })
+  if (cliente.proprieta_onboarding > 0)
+    badges.push({ label: `${cliente.proprieta_onboarding} onboarding`, className: 'bg-amber-100 text-amber-700 border-0' })
+  if (cliente.proprieta_cessate > 0)
+    badges.push({ label: `${cliente.proprieta_cessate} cessate`, className: 'bg-gray-100 text-gray-500 border-0' })
+
+  return (
+    <div className="flex items-center gap-1.5 flex-wrap">
+      <Building2 className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+      {badges.length > 0 ? (
+        badges.map((b) => (
+          <Badge key={b.label} variant="outline" className={`text-xs ${b.className}`}>
+            {b.label}
+          </Badge>
+        ))
+      ) : (
+        <span className="text-sm text-muted-foreground">Nessuna proprietà</span>
+      )}
+    </div>
+  )
 }
 
 export default function ClientiPage() {
   const router = useRouter()
-  // Clienti espliciti (tipo = 'cliente')
-  const { data: clientiEspliciti, isLoading: loadingEspliciti } = useClienti()
-  // Clienti derivati (lead/contatti con proprietà in P3+)
-  const { data: clientiDerivati, isLoading: loadingDerivati } = useClientiConProprieta()
+  const { data: clienti, isLoading } = useClientiConProprieta()
+  const [activeTab, setActiveTab] = useState<string>('tutti')
 
-  // Combina i clienti, evitando duplicati
-  const clientiEsplicitiIds = new Set((clientiEspliciti || []).map(c => c.id))
-  const tuttiClienti: ClienteConProprieta[] = [
-    ...(clientiEspliciti || []),
-    ...(clientiDerivati || []).filter(c => !clientiEsplicitiIds.has(c.id)),
-  ]
+  const filtered = useMemo(() => {
+    if (!clienti) return []
+    if (activeTab === 'tutti') return clienti
+    return clienti.filter((c) => c.gruppo_cliente === activeTab)
+  }, [clienti, activeTab])
 
-  const handleClick = (id: string) => {
-    // Vai alla pagina lead/cliente appropriata
-    const cliente = tuttiClienti.find(c => c.id === id)
-    if (cliente?.tipo === 'lead') {
-      router.push(`/lead/${id}`)
-    } else {
-      router.push(`/clienti/${id}`)
+  const counts = useMemo(() => {
+    if (!clienti) return {} as Record<string, number>
+    const c: Record<string, number> = { tutti: clienti.length }
+    for (const cl of clienti) {
+      c[cl.gruppo_cliente] = (c[cl.gruppo_cliente] || 0) + 1
     }
-  }
+    return c
+  }, [clienti])
 
   const columns: Column<ClienteConProprieta>[] = [
     {
@@ -62,35 +89,23 @@ export default function ClientiPage() {
       key: 'tipo',
       header: 'Tipo',
       cell: (cliente) => (
-        <div className="flex items-center gap-2">
-          {cliente.tipo_persona === 'persona_giuridica' ? (
-            <Badge variant="outline" className="bg-purple-100 text-purple-700 border-0">
-              <Briefcase className="h-3 w-3 mr-1" />
-              Società
-            </Badge>
-          ) : (
-            <Badge variant="outline" className="bg-green-100 text-green-700 border-0">
-              <Users className="h-3 w-3 mr-1" />
-              Persona fisica
-            </Badge>
-          )}
-        </div>
+        cliente.tipo_persona === 'persona_giuridica' ? (
+          <Badge variant="outline" className="bg-purple-100 text-purple-700 border-0">
+            <Briefcase className="h-3 w-3 mr-1" />
+            Società
+          </Badge>
+        ) : (
+          <Badge variant="outline" className="bg-green-100 text-green-700 border-0">
+            <Users className="h-3 w-3 mr-1" />
+            Persona fisica
+          </Badge>
+        )
       ),
     },
     {
       key: 'proprieta',
       header: 'Proprietà',
-      cell: (cliente) => (
-        <div className="flex items-center gap-1">
-          <Building2 className="h-4 w-4 text-muted-foreground" />
-          <span>{cliente.proprieta_operative || 0} operative</span>
-          {cliente.proprieta_count && cliente.proprieta_count > (cliente.proprieta_operative || 0) && (
-            <span className="text-muted-foreground">
-              / {cliente.proprieta_count} totali
-            </span>
-          )}
-        </div>
-      ),
+      cell: (cliente) => <ProprietaBadges cliente={cliente} />,
     },
     {
       key: 'data_conversione',
@@ -102,24 +117,37 @@ export default function ClientiPage() {
     },
   ]
 
-  const isLoading = loadingEspliciti || loadingDerivati
-
   return (
-    <div>
-      <PageHeader
-        title="Clienti"
-      />
+    <div className="space-y-6">
+      <PageHeader title="Clienti" />
 
-      <DataTable
-        columns={columns}
-        data={tuttiClienti}
-        isLoading={isLoading}
-        onRowClick={(cliente) => handleClick(cliente.id)}
-        emptyState={{
-          title: 'Nessun cliente',
-          description: 'I clienti appaiono qui quando hanno almeno una proprietà in fase operativa (P3+).',
-        }}
-      />
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList>
+          {TABS.map((tab) => (
+            <TabsTrigger key={tab.id} value={tab.id} className="text-xs">
+              {tab.label}
+              {counts[tab.id] != null && (
+                <span className="ml-1.5 text-muted-foreground">({counts[tab.id]})</span>
+              )}
+            </TabsTrigger>
+          ))}
+        </TabsList>
+
+        <TabsContent value={activeTab} className="mt-4">
+          <DataTable
+            columns={columns}
+            data={filtered}
+            isLoading={isLoading}
+            onRowClick={(cliente) => router.push(`/clienti/${cliente.id}`)}
+            emptyState={{
+              title: 'Nessun cliente',
+              description: activeTab === 'tutti'
+                ? 'I clienti appariranno qui una volta convertiti da lead.'
+                : `Nessun cliente in fase "${TABS.find(t => t.id === activeTab)?.label}".`,
+            }}
+          />
+        </TabsContent>
+      </Tabs>
     </div>
   )
 }
