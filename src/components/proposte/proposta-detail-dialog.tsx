@@ -4,6 +4,13 @@ import {
   Clock,
   Download,
   Loader2,
+  FileText,
+  Send,
+  CheckCircle2,
+  XCircle,
+  User,
+  Building2,
+  Calendar,
 } from 'lucide-react'
 import {
   Dialog,
@@ -344,7 +351,7 @@ export function PropostaDetailDialog({
           </Button>
           {!defaultTemplate && (
             <p className="text-[10px] text-muted-foreground mt-1 text-center w-full">
-              Configura un template predefinito in Impostazioni > Documenti
+              Configura un template predefinito in Impostazioni &gt; Documenti
             </p>
           )}
         </DialogFooter>

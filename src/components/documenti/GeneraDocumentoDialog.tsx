@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useRef } from 'react'
 import { FileText, Loader2, Download } from 'lucide-react'
 import {
   Dialog,
@@ -24,7 +24,8 @@ import { useDocumentTemplates } from '@/lib/hooks/useDocumentTemplates'
 import { useCreateDocumentoGenerato } from '@/lib/hooks/useDocumentiGenerati'
 import { usePropertyManager } from '@/lib/hooks/use-property-manager'
 import { TemplatePreview } from '@/components/templates/preview/TemplatePreview'
-import { generateAndUploadPdf, downloadPdf } from '@/lib/pdf'
+import { generateAndUploadPdf } from '@/lib/pdf'
+import { generatePdfFromHtml } from '@/lib/pdf/generatePdfFromHtml'
 import type { TemplateContext, PropostaItem } from '@/lib/services/template-resolver'
 import type { Contatto, Proprieta, CategoriaTemplate } from '@/types/database'
 import { CATEGORIE_TEMPLATE } from '@/constants'
@@ -67,6 +68,7 @@ export function GeneraDocumentoDialog({
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>('')
   const [titolo, setTitolo] = useState('')
   const [isGenerating, setIsGenerating] = useState(false)
+  const previewRef = useRef<HTMLDivElement>(null)
 
   // Fetch templates per la categoria
   const { data: templates, isLoading: templatesLoading } = useDocumentTemplates({ categoria, attivo: true })
@@ -205,17 +207,18 @@ export function GeneraDocumentoDialog({
     }
   }
 
-  // Download diretto senza salvare nel DB
+  // Download diretto senza salvare nel DB - usando html2canvas + jspdf
   const handleDownloadPreview = async () => {
-    if (!selectedTemplate) return
+    if (!selectedTemplate || !previewRef.current) {
+      toast.error('Anteprima non disponibile')
+      return
+    }
 
     try {
       setIsGenerating(true)
-      await downloadPdf({
-        content: selectedTemplate.contenuto as Record<string, unknown>,
-        context: templateContext,
+      await generatePdfFromHtml({
+        element: previewRef.current,
         fileName: titolo || titoloDefault,
-        showHeaderFooter: true,
       })
       toast.success('PDF scaricato')
     } catch (error) {
@@ -328,18 +331,20 @@ export function GeneraDocumentoDialog({
             </div>
           </div>
 
-          {/* Preview */}
+          {/* Preview - this is what gets captured for PDF */}
           <div className="overflow-y-auto border rounded-lg bg-white">
-            {selectedTemplate ? (
-              <TemplatePreview
-                content={selectedTemplate.contenuto as Record<string, unknown>}
-                context={templateContext}
-              />
-            ) : (
-              <div className="flex items-center justify-center h-full text-muted-foreground">
-                Seleziona un template per vedere l&apos;anteprima
-              </div>
-            )}
+            <div ref={previewRef} className="p-6">
+              {selectedTemplate ? (
+                <TemplatePreview
+                  content={selectedTemplate.contenuto as Record<string, unknown>}
+                  context={templateContext}
+                />
+              ) : (
+                <div className="flex items-center justify-center h-full text-muted-foreground">
+                  Seleziona un template per vedere l&apos;anteprima
+                </div>
+              )}
+            </div>
           </div>
         </div>
 

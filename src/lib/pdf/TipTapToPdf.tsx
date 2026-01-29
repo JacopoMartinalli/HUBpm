@@ -7,6 +7,7 @@ import {
   StyleSheet,
   Font,
   Image,
+  Link,
 } from '@react-pdf/renderer'
 import type { TemplateContext } from '@/lib/services/template-resolver'
 import { resolveVariable, resolveBlockData } from '@/lib/services/template-resolver'
@@ -50,7 +51,7 @@ const getStyles = (primaryColor?: string | null) => StyleSheet.create({
     color: '#9ca3af',
   },
   content: {
-    flex: 1,
+    // flex: 1, // Removed to avoid layout issues with unknown height
   },
   // Tipografia
   h1: {
@@ -103,6 +104,9 @@ const getStyles = (primaryColor?: string | null) => StyleSheet.create({
     color: primaryColor || '#374151',
   },
   listContent: {
+    flex: 1,
+  },
+  listItemContent: {
     flex: 1,
   },
   // Tabelle
@@ -204,17 +208,16 @@ interface PdfDocumentProps {
 // Renderizza testo con marks (bold, italic, etc.)
 function renderTextWithMarks(
   text: string,
-  marks?: Array<{ type: string; attrs?: Record<string, unknown> }>
+  marks?: Array<{ type: string; attrs?: Record<string, unknown> }>,
+  primaryColor?: string
 ): React.ReactNode {
   if (!marks || marks.length === 0) {
     return <Text>{text}</Text>
   }
 
-  const style: {
-    fontWeight?: 'bold'
-    fontStyle?: 'italic'
-    textDecoration?: 'underline'
-  } = {}
+  const style: any = {}
+  let linkHref: string | null = null
+
   for (const mark of marks) {
     switch (mark.type) {
       case 'bold':
@@ -226,10 +229,24 @@ function renderTextWithMarks(
       case 'underline':
         style.textDecoration = 'underline'
         break
+      case 'strike':
+        style.textDecoration = 'line-through'
+        break
+      case 'link':
+        linkHref = mark.attrs?.href as string
+        style.color = primaryColor || '#2563eb' // blue-600
+        style.textDecoration = 'underline'
+        break
     }
   }
 
-  return <Text style={style}>{text}</Text>
+  const textComponent = <Text style={style}>{text}</Text>
+
+  if (linkHref) {
+    return <Link src={linkHref}>{textComponent}</Link>
+  }
+
+  return textComponent
 }
 
 // Renderizza un nodo TipTap → componente PDF
@@ -245,11 +262,11 @@ function RenderPdfNode({
   switch (node.type) {
     case 'doc':
       return (
-        <View>
+        <>
           {node.content?.map((child, i) => (
             <RenderPdfNode key={i} node={child} context={context} styles={styles} />
           ))}
-        </View>
+        </>
       )
 
     case 'paragraph': {
@@ -285,7 +302,7 @@ function RenderPdfNode({
     }
 
     case 'text':
-      return <>{renderTextWithMarks(node.text || '', node.marks)}</>
+      return renderTextWithMarks(node.text || '', node.marks, context.azienda?.colore_primario || undefined) as React.ReactElement
 
     case 'bulletList':
       return (
@@ -294,7 +311,7 @@ function RenderPdfNode({
             <View key={i} style={styles.listItem}>
               <Text style={styles.listBullet}>•</Text>
               <View style={styles.listContent}>
-                <RenderPdfNode node={child} context={context} />
+                <RenderPdfNode node={child} context={context} styles={styles} />
               </View>
             </View>
           ))}
@@ -308,7 +325,7 @@ function RenderPdfNode({
             <View key={i} style={styles.listItem}>
               <Text style={styles.listBullet}>{i + 1}.</Text>
               <View style={styles.listContent}>
-                <RenderPdfNode node={child} context={context} />
+                <RenderPdfNode node={child} context={context} styles={styles} />
               </View>
             </View>
           ))}
@@ -317,16 +334,11 @@ function RenderPdfNode({
 
     case 'listItem':
       return (
-        <Text>
-          {node.content?.map((child, i) => {
-            if (child.type === 'paragraph') {
-              return child.content?.map((c, j) => (
-                <RenderPdfNode key={`${i}-${j}`} node={c} context={context} styles={styles} />
-              ))
-            }
-            return <RenderPdfNode key={i} node={child} context={context} styles={styles} />
-          })}
-        </Text>
+        <View style={styles.listItemContent}>
+          {node.content?.map((child, i) => (
+            <RenderPdfNode key={i} node={child} context={context} styles={styles} />
+          ))}
+        </View>
       )
 
     case 'blockquote':
@@ -451,6 +463,113 @@ function RenderPdfNode({
             </View>
           )
         }
+
+        case 'cliente': {
+          const nome = data.nome as string || ''
+          const indirizzo = data.indirizzo as string || ''
+          const email = data.email as string || ''
+          const telefono = data.telefono as string || ''
+          const cf = data.cf as string || ''
+          const piva = data.piva as string || ''
+
+          return (
+            <View style={{ marginBottom: 12 }}>
+              <Text style={{ fontSize: 8, color: '#6b7280', marginBottom: 2 }}>Destinatario:</Text>
+              <Text style={{ fontWeight: 'bold', color: '#111827' }}>{nome}</Text>
+              {indirizzo && <Text style={{ color: '#4b5563' }}>{indirizzo}</Text>}
+              {(email || telefono) && (
+                <Text style={{ fontSize: 9, color: '#6b7280' }}>
+                  {[email, telefono].filter(Boolean).join(' • ')}
+                </Text>
+              )}
+              {cf && <Text style={{ fontSize: 9, color: '#6b7280' }}>C.F. {cf}</Text>}
+              {piva && <Text style={{ fontSize: 9, color: '#6b7280' }}>P.IVA {piva}</Text>}
+            </View>
+          )
+        }
+
+        case 'proprieta': {
+          const nome = data.nome as string || ''
+          const indirizzo = data.indirizzo as string || ''
+          const mq = data.mq as string || ''
+          const camere = data.camere as string || ''
+          const bagni = data.bagni as string || ''
+          const maxOspiti = data.maxOspiti as string || ''
+          const cir = data.cir as string || ''
+          const cin = data.cin as string || ''
+
+          const details = [
+            mq ? `${mq} mq` : null,
+            camere ? `${camere} camere` : null,
+            bagni ? `${bagni} bagni` : null,
+            maxOspiti ? `Max ${maxOspiti} ospiti` : null,
+          ].filter(Boolean).join(' • ')
+
+          const codes = [
+            cir ? `CIR: ${cir}` : null,
+            cin ? `CIN: ${cin}` : null,
+          ].filter(Boolean).join(' • ')
+
+          return (
+            <View style={{ marginBottom: 12 }}>
+              <Text style={{ fontSize: 8, color: '#6b7280', marginBottom: 2 }}>Proprietà:</Text>
+              <Text style={{ fontWeight: 'bold', color: '#111827' }}>{nome}</Text>
+              {indirizzo && <Text style={{ color: '#4b5563' }}>{indirizzo}</Text>}
+              {details && <Text style={{ fontSize: 9, color: '#6b7280' }}>{details}</Text>}
+              {codes && <Text style={{ fontSize: 9, color: '#6b7280' }}>{codes}</Text>}
+            </View>
+          )
+        }
+
+        case 'validita': {
+          const config = (node.attrs?.config as { days?: number }) || {}
+          const days = config.days || 30
+          return (
+            <View style={{ marginVertical: 10 }}>
+              <Text style={{ fontStyle: 'italic', color: '#4b5563' }}>
+                Questa proposta è valida per {days} giorni dalla data di emissione.
+              </Text>
+            </View>
+          )
+        }
+
+        case 'termini':
+          return (
+            <View style={{ marginVertical: 10 }}>
+              <Text style={{ fontWeight: 'bold', marginBottom: 6 }}>Termini e Condizioni:</Text>
+              <Text style={{ color: '#4b5563', marginBottom: 2 }}>• I prezzi sono da intendersi IVA esclusa salvo ove diversamente specificato</Text>
+              <Text style={{ color: '#4b5563', marginBottom: 2 }}>• Il pagamento deve essere effettuato entro 30 giorni dalla fatturazione</Text>
+              <Text style={{ color: '#4b5563' }}>• Per i servizi ricorrenti la commissione viene calcolata sul fatturato lordo</Text>
+            </View>
+          )
+
+        case 'firme': {
+          const config = (node.attrs?.config as { leftLabel?: string; rightLabel?: string }) || {}
+          const leftLabel = config.leftLabel || 'Il Fornitore'
+          const rightLabel = config.rightLabel || 'Il Cliente'
+          return (
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 40, marginBottom: 20 }}>
+              <View style={{ alignItems: 'center' }}>
+                <View style={{ width: 120, height: 40, borderBottomWidth: 1, borderBottomColor: '#9ca3af', marginBottom: 4 }} />
+                <Text style={{ fontSize: 9, color: '#4b5563' }}>{leftLabel}</Text>
+              </View>
+              <View style={{ alignItems: 'center' }}>
+                <View style={{ width: 120, height: 40, borderBottomWidth: 1, borderBottomColor: '#9ca3af', marginBottom: 4 }} />
+                <Text style={{ fontSize: 9, color: '#4b5563' }}>{rightLabel}</Text>
+              </View>
+            </View>
+          )
+        }
+
+        case 'note':
+          return (
+            <View style={{ marginVertical: 10, padding: 10, backgroundColor: '#eff6ff', borderLeftWidth: 3, borderLeftColor: '#3b82f6' }}>
+              <Text style={{ color: '#374151' }}>Nota importante da compilare...</Text>
+            </View>
+          )
+
+        case 'separatore':
+          return <View style={styles.hr} />
 
         default:
           return null
