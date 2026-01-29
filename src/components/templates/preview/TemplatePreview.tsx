@@ -53,13 +53,13 @@ function renderMarks(text: string, marks?: Array<{ type: string; attrs?: Record<
 }
 
 // Renderizza ricorsivamente i nodi TipTap
-function RenderNode({ node, index, context, fontTitoli }: { node: TipTapNode; index: number; context?: TemplateContext; fontTitoli?: string }): React.ReactNode {
+function RenderNode({ node, index, context, fontTitoli, primaryColor }: { node: TipTapNode; index: number; context?: TemplateContext; fontTitoli?: string; primaryColor?: string }): React.ReactNode {
     switch (node.type) {
         case 'doc':
             return (
                 <div className="template-preview-content">
                     {node.content?.map((child, i) => (
-                        <RenderNode key={i} node={child} index={i} context={context} fontTitoli={fontTitoli} />
+                        <RenderNode key={i} node={child} index={i} context={context} fontTitoli={fontTitoli} primaryColor={primaryColor} />
                     ))}
                 </div>
             )
@@ -70,7 +70,7 @@ function RenderNode({ node, index, context, fontTitoli }: { node: TipTapNode; in
             return (
                 <p className={`mb-3 ${alignClass}`} key={index}>
                     {node.content?.map((child, i) => (
-                        <RenderNode key={i} node={child} index={i} context={context} fontTitoli={fontTitoli} />
+                        <RenderNode key={i} node={child} index={i} context={context} fontTitoli={fontTitoli} primaryColor={primaryColor} />
                     )) || <br />}
                 </p>
             )
@@ -87,9 +87,9 @@ function RenderNode({ node, index, context, fontTitoli }: { node: TipTapNode; in
                 3: 'text-lg font-medium mb-2',
             }
             return (
-                <Tag className={`${sizeClasses[level] || sizeClasses[1]} ${headingAlignClass}`} key={index} style={fontTitoli ? { fontFamily: fontTitoli } : undefined}>
+                <Tag className={`${sizeClasses[level] || sizeClasses[1]} ${headingAlignClass}`} key={index} style={fontTitoli ? { fontFamily: fontTitoli, color: primaryColor } : (primaryColor ? { color: primaryColor } : undefined)}>
                     {node.content?.map((child, i) => (
-                        <RenderNode key={i} node={child} index={i} context={context} fontTitoli={fontTitoli} />
+                        <RenderNode key={i} node={child} index={i} context={context} fontTitoli={fontTitoli} primaryColor={primaryColor} />
                     ))}
                 </Tag>
             )
@@ -102,7 +102,7 @@ function RenderNode({ node, index, context, fontTitoli }: { node: TipTapNode; in
             return (
                 <ul className="list-disc list-inside mb-3 space-y-1" key={index}>
                     {node.content?.map((child, i) => (
-                        <RenderNode key={i} node={child} index={i} context={context} fontTitoli={fontTitoli} />
+                        <RenderNode key={i} node={child} index={i} context={context} fontTitoli={fontTitoli} primaryColor={primaryColor} />
                     ))}
                 </ul>
             )
@@ -111,7 +111,7 @@ function RenderNode({ node, index, context, fontTitoli }: { node: TipTapNode; in
             return (
                 <ol className="list-decimal list-inside mb-3 space-y-1" key={index}>
                     {node.content?.map((child, i) => (
-                        <RenderNode key={i} node={child} index={i} context={context} fontTitoli={fontTitoli} />
+                        <RenderNode key={i} node={child} index={i} context={context} fontTitoli={fontTitoli} primaryColor={primaryColor} />
                     ))}
                 </ol>
             )
@@ -122,19 +122,19 @@ function RenderNode({ node, index, context, fontTitoli }: { node: TipTapNode; in
                     {node.content?.map((child, i) => {
                         if (child.type === 'paragraph') {
                             return child.content?.map((c, j) => (
-                                <RenderNode key={j} node={c} index={j} context={context} />
+                                <RenderNode key={j} node={c} index={j} context={context} fontTitoli={fontTitoli} primaryColor={primaryColor} />
                             ))
                         }
-                        return <RenderNode key={i} node={child} index={i} context={context} fontTitoli={fontTitoli} />
+                        return <RenderNode key={i} node={child} index={i} context={context} fontTitoli={fontTitoli} primaryColor={primaryColor} />
                     })}
                 </li>
             )
 
         case 'blockquote':
             return (
-                <blockquote className="border-l-4 border-gray-300 pl-4 italic text-gray-600 mb-3" key={index}>
+                <blockquote className="border-l-4 pl-4 italic text-gray-600 mb-3" key={index} style={{ borderLeftColor: primaryColor || '#d1d5db' }}>
                     {node.content?.map((child, i) => (
-                        <RenderNode key={i} node={child} index={i} context={context} fontTitoli={fontTitoli} />
+                        <RenderNode key={i} node={child} index={i} context={context} fontTitoli={fontTitoli} primaryColor={primaryColor} />
                     ))}
                 </blockquote>
             )
@@ -170,6 +170,7 @@ function RenderNode({ node, index, context, fontTitoli }: { node: TipTapNode; in
                     blockType={blockType}
                     config={config}
                     resolvedData={resolved}
+                    primaryColor={primaryColor}
                 />
             )
         }
@@ -179,7 +180,7 @@ function RenderNode({ node, index, context, fontTitoli }: { node: TipTapNode; in
                 return (
                     <div key={index}>
                         {node.content.map((child, i) => (
-                            <RenderNode key={i} node={child} index={i} context={context} fontTitoli={fontTitoli} />
+                            <RenderNode key={i} node={child} index={i} context={context} fontTitoli={fontTitoli} primaryColor={primaryColor} />
                         ))}
                     </div>
                 )
@@ -198,7 +199,7 @@ export function TemplatePreview({ content, context, className = '', fontTitoli, 
             )
         }
 
-        return <RenderNode node={content as unknown as unknown as TipTapNode} index={0} context={context} fontTitoli={fontTitoli} />
+        return <RenderNode node={content as unknown as unknown as TipTapNode} index={0} context={context} fontTitoli={fontTitoli} primaryColor={context?.azienda?.colore_primario} />
     }, [content, context, fontTitoli])
 
     // Header/footer from azienda settings, with defaults as fallback (only for PDF A4 documents)
@@ -211,24 +212,29 @@ export function TemplatePreview({ content, context, className = '', fontTitoli, 
 
     const renderedHeader = useMemo(() => {
         if (!headerContent || Object.keys(headerContent).length === 0) return null
-        return <RenderNode node={headerContent as unknown as TipTapNode} index={-1} context={context} fontTitoli={fontTitoli} />
+        return <RenderNode node={headerContent as unknown as TipTapNode} index={-1} context={context} fontTitoli={fontTitoli} primaryColor={context?.azienda?.colore_primario} />
     }, [headerContent, context, fontTitoli])
 
     const renderedFooter = useMemo(() => {
         if (!footerContent || Object.keys(footerContent).length === 0) return null
-        return <RenderNode node={footerContent as unknown as TipTapNode} index={-2} context={context} fontTitoli={fontTitoli} />
+        return <RenderNode node={footerContent as unknown as TipTapNode} index={-2} context={context} fontTitoli={fontTitoli} primaryColor={context?.azienda?.colore_primario} />
     }, [footerContent, context, fontTitoli])
 
     return (
-        <div className={`template-preview prose prose-sm max-w-none ${className}`}>
+        <div className={`template-preview prose prose-sm max-w-none ${className}`} style={fontCorpo ? { fontFamily: fontCorpo } : undefined}>
             {renderedHeader && (
-                <div className="template-header mb-6">
+                <div className="template-header mb-8 pb-6 border-b" style={{ borderBottomColor: context?.azienda?.colore_primario || '#e5e7eb' }}>
+                    {context?.azienda?.logo_url && (
+                        <img src={context.azienda.logo_url} alt="Logo" className="h-16 mb-4 object-contain" />
+                    )}
                     {renderedHeader}
                 </div>
             )}
-            {renderedContent}
+            <div className="template-content">
+                {renderedContent}
+            </div>
             {renderedFooter && (
-                <div className="template-footer mt-6">
+                <div className="template-footer mt-10 pt-4 border-t text-gray-500 text-xs">
                     {renderedFooter}
                 </div>
             )}

@@ -6,6 +6,7 @@ import {
   View,
   StyleSheet,
   Font,
+  Image,
 } from '@react-pdf/renderer'
 import type { TemplateContext } from '@/lib/services/template-resolver'
 import { resolveVariable, resolveBlockData } from '@/lib/services/template-resolver'
@@ -23,43 +24,55 @@ Font.register({
 })
 
 // Stili PDF
-const styles = StyleSheet.create({
+const getStyles = (primaryColor?: string | null) => StyleSheet.create({
   page: {
     padding: 40,
     fontSize: 10,
     fontFamily: 'Helvetica',
     lineHeight: 1.4,
+    color: '#374151', // text-gray-700
   },
   header: {
-    marginBottom: 20,
+    marginBottom: 30,
+    borderBottomWidth: 1,
+    borderBottomColor: primaryColor || '#e5e7eb',
+    paddingBottom: 20,
   },
   footer: {
     position: 'absolute',
     bottom: 30,
     left: 40,
     right: 40,
+    borderTopWidth: 1,
+    borderTopColor: '#e5e7eb',
+    paddingTop: 10,
+    fontSize: 8,
+    color: '#9ca3af',
   },
   content: {
     flex: 1,
   },
   // Tipografia
   h1: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: 'bold',
-    marginBottom: 12,
+    marginBottom: 16,
+    color: primaryColor || '#111827',
   },
   h2: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: 'bold',
-    marginBottom: 10,
+    marginBottom: 12,
+    color: primaryColor || '#1f2937',
   },
   h3: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: 'bold',
-    marginBottom: 8,
+    marginBottom: 10,
+    color: primaryColor || '#374151',
   },
   paragraph: {
-    marginBottom: 8,
+    marginBottom: 10,
   },
   textCenter: {
     textAlign: 'center',
@@ -78,86 +91,98 @@ const styles = StyleSheet.create({
   },
   // Liste
   list: {
-    marginBottom: 8,
-    paddingLeft: 15,
+    marginBottom: 10,
+    paddingLeft: 10,
   },
   listItem: {
     flexDirection: 'row',
-    marginBottom: 3,
+    marginBottom: 4,
   },
   listBullet: {
-    width: 15,
+    width: 12,
+    color: primaryColor || '#374151',
   },
   listContent: {
     flex: 1,
   },
   // Tabelle
   table: {
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: '#e5e7eb',
+    marginBottom: 16,
+    borderWidth: 0,
+    borderTopWidth: 1,
+    borderTopColor: '#e5e7eb',
   },
   tableRow: {
     flexDirection: 'row',
     borderBottomWidth: 1,
-    borderBottomColor: '#e5e7eb',
+    borderBottomColor: '#f3f4f6',
   },
   tableRowHeader: {
-    backgroundColor: '#f3f4f6',
+    backgroundColor: '#f9fafb',
+    borderBottomWidth: 2,
+    borderBottomColor: primaryColor || '#e5e7eb',
   },
   tableCell: {
-    padding: 6,
+    padding: 8,
     flex: 1,
-    borderRightWidth: 1,
-    borderRightColor: '#e5e7eb',
-  },
-  tableCellLast: {
-    borderRightWidth: 0,
   },
   tableCellHeader: {
     fontWeight: 'bold',
+    color: primaryColor || '#111827',
+    fontSize: 9,
+    textTransform: 'uppercase',
   },
   // HR
   hr: {
     borderBottomWidth: 1,
-    borderBottomColor: '#d1d5db',
-    marginVertical: 12,
+    borderBottomColor: primaryColor || '#d1d5db',
+    marginVertical: 15,
   },
   // Blocco citazione
   blockquote: {
     borderLeftWidth: 3,
-    borderLeftColor: '#d1d5db',
-    paddingLeft: 10,
-    marginLeft: 10,
-    marginBottom: 8,
+    borderLeftColor: primaryColor || '#d1d5db',
+    paddingLeft: 12,
+    marginLeft: 0,
+    marginBottom: 12,
     fontStyle: 'italic',
-    color: '#6b7280',
+    color: '#4b5563',
+    backgroundColor: '#f9fafb',
+    paddingVertical: 8,
   },
   // Variabili non risolte
   variablePlaceholder: {
+    color: '#b45309',
     backgroundColor: '#fef3c7',
-    padding: 2,
   },
   // Totali
   totalsBox: {
-    marginTop: 16,
-    padding: 12,
+    marginTop: 20,
+    padding: 15,
     backgroundColor: '#f9fafb',
-    borderWidth: 1,
-    borderColor: '#e5e7eb',
+    borderRadius: 4,
+    marginLeft: 'auto',
+    width: '40%',
   },
   totalRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 4,
+    marginBottom: 6,
+    fontSize: 10,
   },
   totalRowFinal: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    borderTopWidth: 1,
-    borderTopColor: '#d1d5db',
-    paddingTop: 8,
-    marginTop: 8,
+    borderTopWidth: 2,
+    borderTopColor: primaryColor || '#111827',
+    paddingTop: 10,
+    marginTop: 6,
+    fontSize: 12,
+  },
+  // Immagini
+  image: {
+    marginVertical: 15,
+    borderRadius: 4,
   },
 })
 
@@ -211,16 +236,18 @@ function renderTextWithMarks(
 function RenderPdfNode({
   node,
   context,
+  styles,
 }: {
   node: TipTapNode
   context: TemplateContext
+  styles: any
 }): React.ReactElement | null {
   switch (node.type) {
     case 'doc':
       return (
         <View>
           {node.content?.map((child, i) => (
-            <RenderPdfNode key={i} node={child} context={context} />
+            <RenderPdfNode key={i} node={child} context={context} styles={styles} />
           ))}
         </View>
       )
@@ -236,7 +263,7 @@ function RenderPdfNode({
       return (
         <Text style={[styles.paragraph, alignStyle]}>
           {node.content?.map((child, i) => (
-            <RenderPdfNode key={i} node={child} context={context} />
+            <RenderPdfNode key={i} node={child} context={context} styles={styles} />
           ))}
         </Text>
       )
@@ -251,7 +278,7 @@ function RenderPdfNode({
       return (
         <Text style={[headingStyle, alignStyle]}>
           {node.content?.map((child, i) => (
-            <RenderPdfNode key={i} node={child} context={context} />
+            <RenderPdfNode key={i} node={child} context={context} styles={styles} />
           ))}
         </Text>
       )
@@ -294,10 +321,10 @@ function RenderPdfNode({
           {node.content?.map((child, i) => {
             if (child.type === 'paragraph') {
               return child.content?.map((c, j) => (
-                <RenderPdfNode key={`${i}-${j}`} node={c} context={context} />
+                <RenderPdfNode key={`${i}-${j}`} node={c} context={context} styles={styles} />
               ))
             }
-            return <RenderPdfNode key={i} node={child} context={context} />
+            return <RenderPdfNode key={i} node={child} context={context} styles={styles} />
           })}
         </Text>
       )
@@ -306,7 +333,7 @@ function RenderPdfNode({
       return (
         <View style={styles.blockquote}>
           {node.content?.map((child, i) => (
-            <RenderPdfNode key={i} node={child} context={context} />
+            <RenderPdfNode key={i} node={child} context={context} styles={styles} />
           ))}
         </View>
       )
@@ -316,6 +343,12 @@ function RenderPdfNode({
 
     case 'hardBreak':
       return <Text>{'\n'}</Text>
+
+    case 'image': {
+      const src = node.attrs?.src as string
+      if (!src) return null
+      return <Image src={src} style={styles.image} />
+    }
 
     // Variabili dinamiche
     case 'variableMention': {
@@ -430,7 +463,7 @@ function RenderPdfNode({
         return (
           <View>
             {node.content.map((child, i) => (
-              <RenderPdfNode key={i} node={child} context={context} />
+              <RenderPdfNode key={i} node={child} context={context} styles={styles} />
             ))}
           </View>
         )
@@ -453,6 +486,8 @@ export function PdfDocument({
   context,
   showHeaderFooter = true,
 }: PdfDocumentProps): React.ReactElement {
+  const styles = getStyles(context.azienda?.colore_primario)
+
   // Header/footer da azienda o default
   const headerContent = showHeaderFooter
     ? (context.azienda?.intestazione_json as Record<string, unknown>) || getDefaultIntestazione()
@@ -467,9 +502,13 @@ export function PdfDocument({
         {/* Header */}
         {headerContent && (
           <View style={styles.header} fixed>
+            {context.azienda?.logo_url && (
+              <Image src={context.azienda.logo_url} style={{ width: 100, marginBottom: 10 }} />
+            )}
             <RenderPdfNode
               node={headerContent as unknown as TipTapNode}
               context={context}
+              styles={styles}
             />
           </View>
         )}
@@ -479,6 +518,7 @@ export function PdfDocument({
           <RenderPdfNode
             node={content as unknown as TipTapNode}
             context={context}
+            styles={styles}
           />
         </View>
 
@@ -488,6 +528,7 @@ export function PdfDocument({
             <RenderPdfNode
               node={footerContent as unknown as TipTapNode}
               context={context}
+              styles={styles}
             />
           </View>
         )}

@@ -6,6 +6,7 @@ interface PreviewDynamicBlockProps {
     blockType: string
     config: Record<string, unknown>
     resolvedData?: Record<string, unknown>
+    primaryColor?: string
 }
 
 // Map blocchi per accesso rapido
@@ -30,7 +31,7 @@ function d(resolved: Record<string, unknown> | undefined, fallback: Record<strin
     return fallback
 }
 
-function renderBlockContent(blockType: string, config: Record<string, unknown>, resolvedData?: Record<string, unknown>): React.ReactNode {
+function renderBlockContent(blockType: string, config: Record<string, unknown>, resolvedData?: Record<string, unknown>, primaryColor?: string): React.ReactNode {
     switch (blockType) {
         case 'header': {
             const data = d(resolvedData, FALLBACK.header)
@@ -141,12 +142,12 @@ function renderBlockContent(blockType: string, config: Record<string, unknown>, 
                 <div className="my-4">
                     <table className="w-full border-collapse text-sm">
                         <thead>
-                            <tr className="bg-gray-50">
-                                <th className="text-left p-3 border border-gray-200 font-semibold">Servizio</th>
+                            <tr className="bg-gray-50" style={{ borderBottomColor: primaryColor || '#e5e7eb', borderBottomWidth: '2px' }}>
+                                <th className="text-left p-3 border border-gray-200 font-semibold" style={{ color: primaryColor }}>Servizio</th>
                                 {config.showQuantity !== false && (
-                                    <th className="text-center p-3 border border-gray-200 font-semibold w-20">Qtà</th>
+                                    <th className="text-center p-3 border border-gray-200 font-semibold w-20" style={{ color: primaryColor }}>Qtà</th>
                                 )}
-                                <th className="text-right p-3 border border-gray-200 font-semibold w-28">Prezzo</th>
+                                <th className="text-right p-3 border border-gray-200 font-semibold w-28" style={{ color: primaryColor }}>Prezzo</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -192,7 +193,7 @@ function renderBlockContent(blockType: string, config: Record<string, unknown>, 
                             <span>€ 220,00</span>
                         </div>
                     )}
-                    <div className={`flex justify-between py-2 mt-1 border-t-2 border-gray-900 font-bold text-lg ${cls}`}>
+                    <div className={`flex justify-between py-2 mt-1 border-t-2 font-bold text-lg ${cls}`} style={{ borderTopColor: primaryColor || '#111827' }}>
                         <span>Totale:</span>
                         <span>{data.totale as string || '€ 1.220,00'}</span>
                     </div>
@@ -267,7 +268,7 @@ function renderBlockContent(blockType: string, config: Record<string, unknown>, 
     }
 }
 
-export function PreviewDynamicBlock({ blockType, config, resolvedData }: PreviewDynamicBlockProps) {
+export function PreviewDynamicBlock({ blockType, config, resolvedData, primaryColor }: PreviewDynamicBlockProps) {
     const blockInfo = BLOCK_MAP[blockType]
 
     if (!blockInfo) {
@@ -278,5 +279,5 @@ export function PreviewDynamicBlock({ blockType, config, resolvedData }: Preview
         )
     }
 
-    return <>{renderBlockContent(blockType, config, resolvedData)}</>
+    return <>{renderBlockContent(blockType, config, resolvedData, primaryColor)}</>
 }

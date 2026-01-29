@@ -1,25 +1,28 @@
 'use client'
 
 import {
-  FileText,
-  User,
-  Building2,
-  Calendar,
-  Send,
-  CheckCircle2,
-  XCircle,
   Clock,
+  Download,
+  Loader2,
 } from 'lucide-react'
 import {
   Dialog,
   DialogContent,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
+import { Button } from '@/components/ui/button'
 import { cn, formatCurrency, formatDate } from '@/lib/utils'
 import type { PropostaCommerciale, StatoProposta } from '@/types/database'
+import { useState } from 'react'
+import { usePropertyManager } from '@/lib/hooks/use-property-manager'
+import { useDefaultTemplate } from '@/lib/hooks/useDocumentTemplates'
+import { downloadPdf } from '@/lib/pdf/generatePdf'
+import { toast } from 'sonner'
+import type { TemplateContext } from '@/lib/services/template-resolver'
 
 interface PropostaDetailDialogProps {
   proposta: PropostaCommerciale | null
@@ -70,10 +73,63 @@ export function PropostaDetailDialog({
   open,
   onOpenChange
 }: PropostaDetailDialogProps) {
+  const [isDownloading, setIsDownloading] = useState(false)
+  const { data: propertyManager } = usePropertyManager()
+  const { data: defaultTemplate } = useDefaultTemplate('preventivo')
+
   if (!proposta) return null
 
   const statoConfig = STATO_CONFIG[proposta.stato]
   const StatoIcon = statoConfig.icon
+
+  const handleDownload = async () => {
+    if (!defaultTemplate) {
+      toast.error('Nessun template predefinito trovato per i preventivi')
+      return
+    }
+
+    try {
+      setIsDownloading(true)
+
+      const context: TemplateContext = {
+        azienda: propertyManager || null,
+        cliente: proposta.contatto || null,
+        proprieta: proposta.proprieta || null,
+        proposta: {
+          numero: proposta.numero || undefined,
+          data: proposta.data_creazione,
+          totale: proposta.totale,
+          subtotale: proposta.subtotale,
+          sconto: proposta.sconto_fisso + (proposta.subtotale * proposta.sconto_percentuale / 100),
+          items: proposta.items?.map(item => ({
+            nome: item.nome,
+            descrizione: item.descrizione,
+            quantita: item.quantita,
+            prezzo_unitario: item.prezzo_unitario,
+            prezzo_totale: item.prezzo_totale
+          }))
+        }
+      }
+
+      const fileName = proposta.numero
+        ? `Preventivo_${proposta.numero}`
+        : `Preventivo_${proposta.contatto?.cognome || 'Cliente'}`
+
+      await downloadPdf({
+        content: defaultTemplate.contenuto as Record<string, unknown>,
+        context,
+        fileName,
+        showHeaderFooter: true
+      })
+
+      toast.success('PDF generato con successo')
+    } catch (error) {
+      console.error('Errore generazione PDF:', error)
+      toast.error('Errore durante la generazione del PDF')
+    } finally {
+      setIsDownloading(false)
+    }
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -267,6 +323,31 @@ export function PropostaDetailDialog({
             </>
           )}
         </div>
+
+        <DialogFooter className="sticky bottom-0 bg-background pt-4 border-t">
+          <Button
+            variant="outline"
+            onClick={handleDownload}
+            disabled={isDownloading || !defaultTemplate}
+          >
+            {isDownloading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Generazione...
+              </>
+            ) : (
+              <>
+                <Download className="mr-2 h-4 w-4" />
+                Scarica PDF
+              </>
+            )}
+          </Button>
+          {!defaultTemplate && (
+            <p className="text-[10px] text-muted-foreground mt-1 text-center w-full">
+              Configura un template predefinito in Impostazioni > Documenti
+            </p>
+          )}
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   )
