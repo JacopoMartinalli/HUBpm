@@ -1245,3 +1245,193 @@ export interface DocumentoGeneratoInsert {
 }
 
 export type DocumentoGeneratoUpdate = Partial<Omit<DocumentoGeneratoInsert, 'tenant_id'>>
+
+// ============================================
+// PORTALE CLIENTI
+// ============================================
+
+// Enums Portale
+export type StatoRichiestaServizio =
+  | 'in_attesa'        // Cliente ha richiesto, PM deve valutare
+  | 'in_valutazione'   // PM sta preparando proposta
+  | 'proposta_inviata' // Proposta creata e inviata
+  | 'accettata'        // Cliente ha accettato
+  | 'rifiutata'        // PM o cliente hanno rifiutato
+  | 'completata'       // Servizio erogato
+
+export type TipoMittenteMessaggio = 'cliente' | 'pm'
+
+export type TipoNotificaPortale =
+  | 'documento_richiesto'
+  | 'documento_verificato'
+  | 'proposta_ricevuta'
+  | 'servizio_iniziato'
+  | 'servizio_completato'
+  | 'messaggio_ricevuto'
+  | 'fase_proprieta_cambiata'
+
+// Utenti Portale
+export interface UtentePortale {
+  id: string
+  tenant_id: string
+  auth_user_id: string | null
+  contatto_id: string
+  attivo: boolean
+  ultimo_accesso: string | null
+  created_at: string
+  updated_at: string
+  // Relazioni
+  contatto?: Contatto
+}
+
+export interface UtentePortaleInsert {
+  tenant_id: string
+  auth_user_id?: string | null
+  contatto_id: string
+  attivo?: boolean
+}
+
+export type UtentePortaleUpdate = Partial<Omit<UtentePortaleInsert, 'tenant_id' | 'contatto_id'>>
+
+// Inviti Portale
+export interface InvitoPortale {
+  id: string
+  tenant_id: string
+  contatto_id: string
+  token: string
+  email: string
+  usato: boolean
+  data_scadenza: string
+  data_utilizzo: string | null
+  created_at: string
+  created_by: string | null
+  // Relazioni
+  contatto?: Contatto
+}
+
+export interface InvitoPortaleInsert {
+  tenant_id: string
+  contatto_id: string
+  token: string
+  email: string
+  data_scadenza: string
+  created_by?: string | null
+}
+
+// Richieste Servizi
+export interface RichiestaServizio {
+  id: string
+  tenant_id: string
+  contatto_id: string
+  proprieta_id: string | null
+  servizio_id: string | null
+  pacchetto_id: string | null
+  titolo: string
+  descrizione: string | null
+  stato: StatoRichiestaServizio
+  proposta_id: string | null
+  note_cliente: string | null
+  note_pm: string | null
+  motivo_rifiuto: string | null
+  data_richiesta: string
+  data_risposta: string | null
+  created_at: string
+  updated_at: string
+  // Relazioni
+  contatto?: Contatto
+  proprieta?: Proprieta
+  servizio?: CatalogoServizio
+  pacchetto?: PacchettoServizio
+  proposta?: PropostaCommerciale
+}
+
+export interface RichiestaServizioInsert {
+  tenant_id: string
+  contatto_id: string
+  proprieta_id?: string | null
+  servizio_id?: string | null
+  pacchetto_id?: string | null
+  titolo: string
+  descrizione?: string | null
+  stato?: StatoRichiestaServizio
+  note_cliente?: string | null
+}
+
+export type RichiestaServizioUpdate = Partial<Omit<RichiestaServizioInsert, 'tenant_id' | 'contatto_id'>>
+
+// Messaggi Portale
+export interface MessaggioPortale {
+  id: string
+  tenant_id: string
+  contatto_id: string
+  proprieta_id: string | null
+  richiesta_servizio_id: string | null
+  documento_id: string | null
+  mittente: TipoMittenteMessaggio
+  oggetto: string | null
+  contenuto: string
+  letto: boolean
+  data_lettura: string | null
+  created_at: string
+  // Relazioni
+  contatto?: Contatto
+  proprieta?: Proprieta
+  richiesta?: RichiestaServizio
+  documento?: Documento
+}
+
+export interface MessaggioPortaleInsert {
+  tenant_id: string
+  contatto_id: string
+  proprieta_id?: string | null
+  richiesta_servizio_id?: string | null
+  documento_id?: string | null
+  mittente: TipoMittenteMessaggio
+  oggetto?: string | null
+  contenuto: string
+}
+
+export type MessaggioPortaleUpdate = {
+  letto?: boolean
+  data_lettura?: string | null
+}
+
+// Notifiche Portale
+export interface NotificaPortale {
+  id: string
+  tenant_id: string
+  contatto_id: string
+  tipo: TipoNotificaPortale
+  titolo: string
+  descrizione: string | null
+  proprieta_id: string | null
+  documento_id: string | null
+  proposta_id: string | null
+  richiesta_id: string | null
+  letta: boolean
+  data_lettura: string | null
+  created_at: string
+  // Relazioni
+  contatto?: Contatto
+  proprieta?: Proprieta
+  documento?: Documento
+  proposta?: PropostaCommerciale
+  richiesta?: RichiestaServizio
+}
+
+export interface NotificaPortaleInsert {
+  tenant_id: string
+  contatto_id: string
+  tipo: TipoNotificaPortale
+  titolo: string
+  descrizione?: string | null
+  proprieta_id?: string | null
+  documento_id?: string | null
+  proposta_id?: string | null
+  richiesta_id?: string | null
+}
+
+export type NotificaPortaleUpdate = {
+  letta?: boolean
+  data_lettura?: string | null
+}

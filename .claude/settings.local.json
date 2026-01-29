@@ -35,7 +35,9 @@
       "Bash(powershell -ExecutionPolicy Bypass -File:*)",
       "Bash(git status:*)",
       "Bash(git checkout:*)",
-      "Bash(git pull:*)"
+      "Bash(git pull:*)",
+      "Bash(git fetch:*)",
+      "Bash(git stash:*)"
     ]
   }
 }

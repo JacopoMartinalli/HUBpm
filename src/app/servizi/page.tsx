@@ -119,11 +119,6 @@ export default function ServiziPage() {
     return formatCurrency(servizio.prezzo_base)
   }
 
-  // Usa il prezzo_base del pacchetto, non il calcolo dei singoli servizi
-  const getPrezzoPackchetto = (pacchetto: PacchettoServizio) => {
-    return pacchetto.prezzo_base
-  }
-
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -366,81 +361,21 @@ export default function ServiziPage() {
           </div>
 
           {pacchetti && pacchetti.length > 0 ? (
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {pacchetti.map((pacchetto) => {
-                const prezzoPacchetto = getPrezzoPackchetto(pacchetto)
-
-                return (
-                  <Card key={pacchetto.id} className={!pacchetto.attivo ? 'opacity-60' : ''}>
-                    <CardHeader className="pb-2">
-                      <div className="flex items-start justify-between">
-                        <div>
-                          <CardTitle className="text-lg">{pacchetto.nome}</CardTitle>
-                          {pacchetto.categoria && (
-                            <Badge
-                              variant="outline"
-                              className="mt-1"
-                              style={{ borderColor: pacchetto.categoria.colore, color: pacchetto.categoria.colore }}
-                            >
-                              {pacchetto.categoria.nome}
-                            </Badge>
-                          )}
-                        </div>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="sm">
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => {
-                              setSelectedPacchetto(pacchetto)
-                              setPacchettoDialogOpen(true)
-                            }}>
-                              <Pencil className="h-4 w-4 mr-2" />
-                              Modifica
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                              className="text-destructive"
-                              onClick={() => {
-                                setItemToDelete({ type: 'pacchetto', id: pacchetto.id, nome: pacchetto.nome })
-                                setDeleteDialogOpen(true)
-                              }}
-                            >
-                              <Trash2 className="h-4 w-4 mr-2" />
-                              Elimina
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
-                    </CardHeader>
-                    <CardContent>
-                      {pacchetto.descrizione && (
-                        <p className="text-sm text-muted-foreground mb-3">{pacchetto.descrizione}</p>
-                      )}
-
-                      <div className="space-y-1 mb-3">
-                        <p className="text-xs font-medium text-muted-foreground uppercase">
-                          Servizi inclusi ({pacchetto.servizi?.length || 0})
-                        </p>
-                        {pacchetto.servizi?.map((item) => (
-                          <div key={item.id} className="text-sm py-0.5">
-                            <span>{item.servizio?.nome}</span>
-                          </div>
-                        ))}
-                      </div>
-
-                      <div className="pt-3 border-t flex items-center justify-between">
-                        <span className="font-medium">Prezzo pacchetto</span>
-                        <span className="text-lg font-bold">
-                          {prezzoPacchetto ? formatCurrency(prezzoPacchetto) : 'Da quotare'}
-                        </span>
-                      </div>
-                    </CardContent>
-                  </Card>
-                )
-              })}
+            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+              {pacchetti.map((pacchetto) => (
+                <PacchettoCard
+                  key={pacchetto.id}
+                  pacchetto={pacchetto}
+                  onEdit={() => {
+                    setSelectedPacchetto(pacchetto)
+                    setPacchettoDialogOpen(true)
+                  }}
+                  onDelete={() => {
+                    setItemToDelete({ type: 'pacchetto', id: pacchetto.id, nome: pacchetto.nome })
+                    setDeleteDialogOpen(true)
+                  }}
+                />
+              ))}
             </div>
           ) : (
             <EmptyState
@@ -501,6 +436,114 @@ export default function ServiziPage() {
         onConfirm={handleDeleteConfirm}
       />
     </div>
+  )
+}
+
+// Componente card pacchetto compatta con accordion
+function PacchettoCard({
+  pacchetto,
+  onEdit,
+  onDelete,
+}: {
+  pacchetto: PacchettoServizio
+  onEdit: () => void
+  onDelete: () => void
+}) {
+  const [isExpanded, setIsExpanded] = useState(false)
+  const numServizi = pacchetto.servizi?.length || 0
+
+  return (
+    <Card className={`overflow-hidden ${!pacchetto.attivo ? 'opacity-60' : ''}`}>
+      <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>
+        <div className="p-4">
+          {/* Header compatto */}
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h3 className="font-semibold text-base truncate">{pacchetto.nome}</h3>
+                {!pacchetto.attivo && (
+                  <Badge variant="secondary" className="text-xs">Disattivo</Badge>
+                )}
+              </div>
+              {pacchetto.categoria && (
+                <div className="flex items-center gap-1.5 mt-1">
+                  <div
+                    className="w-2 h-2 rounded-full flex-shrink-0"
+                    style={{ backgroundColor: pacchetto.categoria.colore }}
+                  />
+                  <span className="text-xs text-muted-foreground truncate">
+                    {pacchetto.categoria.nome}
+                  </span>
+                </div>
+              )}
+            </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0">
+                  <MoreHorizontal className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={onEdit}>
+                  <Pencil className="h-4 w-4 mr-2" />
+                  Modifica
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem className="text-destructive" onClick={onDelete}>
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Elimina
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+
+          {/* Info row: servizi count + prezzo */}
+          <div className="flex items-center justify-between mt-3 pt-3 border-t">
+            <CollapsibleTrigger asChild>
+              <button className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
+                {isExpanded ? (
+                  <ChevronDown className="h-4 w-4" />
+                ) : (
+                  <ChevronRight className="h-4 w-4" />
+                )}
+                <Package className="h-3.5 w-3.5" />
+                <span>{numServizi} servizi inclusi</span>
+              </button>
+            </CollapsibleTrigger>
+            <span className="font-bold text-base">
+              {pacchetto.prezzo_base ? formatCurrency(pacchetto.prezzo_base) : 'Da quotare'}
+            </span>
+          </div>
+        </div>
+
+        {/* Contenuto espandibile */}
+        <CollapsibleContent>
+          <div className="px-4 pb-4 pt-0">
+            {pacchetto.descrizione && (
+              <p className="text-sm text-muted-foreground mb-3 pb-3 border-b">
+                {pacchetto.descrizione}
+              </p>
+            )}
+            <div className="space-y-1.5">
+              {pacchetto.servizi?.map((item) => (
+                <div
+                  key={item.id}
+                  className="flex items-center gap-2 text-sm py-1 px-2 rounded bg-muted/50"
+                >
+                  <Settings className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+                  <span className="truncate">{item.servizio?.nome}</span>
+                </div>
+              ))}
+              {numServizi === 0 && (
+                <p className="text-sm text-muted-foreground italic">
+                  Nessun servizio incluso
+                </p>
+              )}
+            </div>
+          </div>
+        </CollapsibleContent>
+      </Collapsible>
+    </Card>
   )
 }
 

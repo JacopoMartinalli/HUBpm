@@ -18,6 +18,7 @@ import {
   Target,
   Briefcase,
   FileText,
+  ExternalLink,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -98,6 +99,16 @@ const navigation: NavSection[] = [
         title: 'Documenti',
         href: '/documenti',
         icon: FileText,
+      },
+    ],
+  },
+  {
+    title: 'Accessi Dev',
+    items: [
+      {
+        title: 'Portale Clienti',
+        href: '/portale/login',
+        icon: ExternalLink,
       },
     ],
   },
