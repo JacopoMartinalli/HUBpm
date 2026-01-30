@@ -6,8 +6,6 @@ import {
   View,
   StyleSheet,
   Font,
-  Image,
-  Link,
 } from '@react-pdf/renderer'
 import type { TemplateContext } from '@/lib/services/template-resolver'
 import { resolveVariable, resolveBlockData } from '@/lib/services/template-resolver'
@@ -24,56 +22,44 @@ Font.register({
   ],
 })
 
-// Stili PDF
-const getStyles = (primaryColor?: string | null) => StyleSheet.create({
+// Stili PDF di base (dinamici vengono creati in createDynamicStyles)
+const baseStyles = StyleSheet.create({
   page: {
     padding: 40,
     fontSize: 10,
     fontFamily: 'Helvetica',
     lineHeight: 1.4,
-    color: '#374151', // text-gray-700
   },
   header: {
-    marginBottom: 30,
-    borderBottomWidth: 1,
-    borderBottomColor: primaryColor || '#e5e7eb',
-    paddingBottom: 20,
+    marginBottom: 20,
   },
   footer: {
     position: 'absolute',
     bottom: 30,
     left: 40,
     right: 40,
-    borderTopWidth: 1,
-    borderTopColor: '#e5e7eb',
-    paddingTop: 10,
-    fontSize: 8,
-    color: '#9ca3af',
   },
   content: {
-    // flex: 1, // Removed to avoid layout issues with unknown height
+    flex: 1,
   },
-  // Tipografia
+  // Tipografia base
   h1: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    marginBottom: 16,
-    color: primaryColor || '#111827',
-  },
-  h2: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: 'bold',
     marginBottom: 12,
-    color: primaryColor || '#1f2937',
   },
-  h3: {
-    fontSize: 14,
+  h2: {
+    fontSize: 16,
     fontWeight: 'bold',
     marginBottom: 10,
-    color: primaryColor || '#374151',
+  },
+  h3: {
+    fontSize: 13,
+    fontWeight: 'bold',
+    marginBottom: 8,
   },
   paragraph: {
-    marginBottom: 10,
+    marginBottom: 8,
   },
   textCenter: {
     textAlign: 'center',
@@ -92,103 +78,113 @@ const getStyles = (primaryColor?: string | null) => StyleSheet.create({
   },
   // Liste
   list: {
-    marginBottom: 10,
-    paddingLeft: 10,
+    marginBottom: 8,
+    paddingLeft: 15,
   },
   listItem: {
     flexDirection: 'row',
-    marginBottom: 4,
+    marginBottom: 3,
   },
   listBullet: {
-    width: 12,
-    color: primaryColor || '#374151',
+    width: 15,
   },
   listContent: {
     flex: 1,
   },
-  listItemContent: {
-    flex: 1,
-  },
   // Tabelle
   table: {
-    marginBottom: 16,
-    borderWidth: 0,
-    borderTopWidth: 1,
-    borderTopColor: '#e5e7eb',
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
   },
   tableRow: {
     flexDirection: 'row',
     borderBottomWidth: 1,
-    borderBottomColor: '#f3f4f6',
+    borderBottomColor: '#e5e7eb',
   },
   tableRowHeader: {
-    backgroundColor: '#f9fafb',
-    borderBottomWidth: 2,
-    borderBottomColor: primaryColor || '#e5e7eb',
+    backgroundColor: '#f3f4f6',
   },
   tableCell: {
-    padding: 8,
+    padding: 6,
     flex: 1,
+    borderRightWidth: 1,
+    borderRightColor: '#e5e7eb',
+  },
+  tableCellLast: {
+    borderRightWidth: 0,
   },
   tableCellHeader: {
     fontWeight: 'bold',
-    color: primaryColor || '#111827',
-    fontSize: 9,
-    textTransform: 'uppercase',
   },
   // HR
   hr: {
     borderBottomWidth: 1,
-    borderBottomColor: primaryColor || '#d1d5db',
-    marginVertical: 15,
+    borderBottomColor: '#d1d5db',
+    marginVertical: 12,
   },
   // Blocco citazione
   blockquote: {
     borderLeftWidth: 3,
-    borderLeftColor: primaryColor || '#d1d5db',
-    paddingLeft: 12,
-    marginLeft: 0,
-    marginBottom: 12,
+    borderLeftColor: '#d1d5db',
+    paddingLeft: 10,
+    marginLeft: 10,
+    marginBottom: 8,
     fontStyle: 'italic',
-    color: '#4b5563',
-    backgroundColor: '#f9fafb',
-    paddingVertical: 8,
+    color: '#6b7280',
   },
   // Variabili non risolte
   variablePlaceholder: {
-    color: '#b45309',
     backgroundColor: '#fef3c7',
+    padding: 2,
+  },
+  // Testo con colore primario (per header)
+  textPrimary: {
+    // colore applicato dinamicamente
+  },
+  // Testo con colore secondario
+  textSecondary: {
+    // colore applicato dinamicamente
   },
   // Totali
   totalsBox: {
-    marginTop: 20,
-    padding: 15,
+    marginTop: 16,
+    padding: 12,
     backgroundColor: '#f9fafb',
-    borderRadius: 4,
-    marginLeft: 'auto',
-    width: '40%',
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
   },
   totalRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 6,
-    fontSize: 10,
+    marginBottom: 4,
   },
   totalRowFinal: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    borderTopWidth: 2,
-    borderTopColor: primaryColor || '#111827',
-    paddingTop: 10,
-    marginTop: 6,
-    fontSize: 12,
-  },
-  // Immagini
-  image: {
-    marginVertical: 15,
-    borderRadius: 4,
+    borderTopWidth: 1,
+    borderTopColor: '#d1d5db',
+    paddingTop: 8,
+    marginTop: 8,
   },
 })
+
+// Configurazione stili dinamici basati su azienda
+interface StyleConfig {
+  colorePrimario: string
+  coloreSecondario: string
+  fontTitoli: string
+  fontCorpo: string
+}
+
+function getStyleConfig(context: TemplateContext): StyleConfig {
+  return {
+    colorePrimario: context.azienda?.colore_primario || '#1a1a1a',
+    coloreSecondario: context.azienda?.colore_secondario || '#666666',
+    fontTitoli: context.azienda?.font_titoli || 'Helvetica',
+    fontCorpo: context.azienda?.font_corpo || 'Helvetica',
+  }
+}
 
 // Tipi TipTap
 interface TipTapNode {
@@ -208,16 +204,17 @@ interface PdfDocumentProps {
 // Renderizza testo con marks (bold, italic, etc.)
 function renderTextWithMarks(
   text: string,
-  marks?: Array<{ type: string; attrs?: Record<string, unknown> }>,
-  primaryColor?: string
+  marks?: Array<{ type: string; attrs?: Record<string, unknown> }>
 ): React.ReactNode {
   if (!marks || marks.length === 0) {
     return <Text>{text}</Text>
   }
 
-  const style: any = {}
-  let linkHref: string | null = null
-
+  const style: {
+    fontWeight?: 'bold'
+    fontStyle?: 'italic'
+    textDecoration?: 'underline'
+  } = {}
   for (const mark of marks) {
     switch (mark.type) {
       case 'bold':
@@ -229,58 +226,49 @@ function renderTextWithMarks(
       case 'underline':
         style.textDecoration = 'underline'
         break
-      case 'strike':
-        style.textDecoration = 'line-through'
-        break
-      case 'link':
-        linkHref = mark.attrs?.href as string
-        style.color = primaryColor || '#2563eb' // blue-600
-        style.textDecoration = 'underline'
-        break
     }
   }
 
-  const textComponent = <Text style={style}>{text}</Text>
-
-  if (linkHref) {
-    return <Link src={linkHref}>{textComponent}</Link>
-  }
-
-  return textComponent
+  return <Text style={style}>{text}</Text>
 }
 
 // Renderizza un nodo TipTap → componente PDF
 function RenderPdfNode({
   node,
   context,
-  styles,
+  styleConfig,
+  isHeaderFooter = false,
 }: {
   node: TipTapNode
   context: TemplateContext
-  styles: any
+  styleConfig: StyleConfig
+  isHeaderFooter?: boolean
 }): React.ReactElement | null {
   switch (node.type) {
     case 'doc':
       return (
-        <>
+        <View>
           {node.content?.map((child, i) => (
-            <RenderPdfNode key={i} node={child} context={context} styles={styles} />
+            <RenderPdfNode key={i} node={child} context={context} styleConfig={styleConfig} isHeaderFooter={isHeaderFooter} />
           ))}
-        </>
+        </View>
       )
 
     case 'paragraph': {
       const textAlign = node.attrs?.textAlign as string
-      const alignStyle = textAlign === 'center' ? styles.textCenter : textAlign === 'right' ? styles.textRight : {}
+      const alignStyle = textAlign === 'center' ? baseStyles.textCenter : textAlign === 'right' ? baseStyles.textRight : {}
 
       if (!node.content || node.content.length === 0) {
         return <View style={{ height: 10 }} />
       }
 
+      // In header/footer usa colore secondario per paragrafi
+      const colorStyle = isHeaderFooter ? { color: styleConfig.coloreSecondario } : {}
+
       return (
-        <Text style={[styles.paragraph, alignStyle]}>
+        <Text style={[baseStyles.paragraph, alignStyle, colorStyle]}>
           {node.content?.map((child, i) => (
-            <RenderPdfNode key={i} node={child} context={context} styles={styles} />
+            <RenderPdfNode key={i} node={child} context={context} styleConfig={styleConfig} isHeaderFooter={isHeaderFooter} />
           ))}
         </Text>
       )
@@ -289,29 +277,32 @@ function RenderPdfNode({
     case 'heading': {
       const level = (node.attrs?.level as number) || 1
       const textAlign = node.attrs?.textAlign as string
-      const alignStyle = textAlign === 'center' ? styles.textCenter : textAlign === 'right' ? styles.textRight : {}
-      const headingStyle = level === 1 ? styles.h1 : level === 2 ? styles.h2 : styles.h3
+      const alignStyle = textAlign === 'center' ? baseStyles.textCenter : textAlign === 'right' ? baseStyles.textRight : {}
+      const headingStyle = level === 1 ? baseStyles.h1 : level === 2 ? baseStyles.h2 : baseStyles.h3
+
+      // In header/footer usa colore primario per titoli
+      const colorStyle = isHeaderFooter ? { color: styleConfig.colorePrimario } : {}
 
       return (
-        <Text style={[headingStyle, alignStyle]}>
+        <Text style={[headingStyle, alignStyle, colorStyle]}>
           {node.content?.map((child, i) => (
-            <RenderPdfNode key={i} node={child} context={context} styles={styles} />
+            <RenderPdfNode key={i} node={child} context={context} styleConfig={styleConfig} isHeaderFooter={isHeaderFooter} />
           ))}
         </Text>
       )
     }
 
     case 'text':
-      return renderTextWithMarks(node.text || '', node.marks, context.azienda?.colore_primario || undefined) as React.ReactElement
+      return <>{renderTextWithMarks(node.text || '', node.marks)}</>
 
     case 'bulletList':
       return (
-        <View style={styles.list}>
+        <View style={baseStyles.list}>
           {node.content?.map((child, i) => (
-            <View key={i} style={styles.listItem}>
-              <Text style={styles.listBullet}>•</Text>
-              <View style={styles.listContent}>
-                <RenderPdfNode node={child} context={context} styles={styles} />
+            <View key={i} style={baseStyles.listItem}>
+              <Text style={baseStyles.listBullet}>•</Text>
+              <View style={baseStyles.listContent}>
+                <RenderPdfNode node={child} context={context} styleConfig={styleConfig} isHeaderFooter={isHeaderFooter} />
               </View>
             </View>
           ))}
@@ -320,12 +311,12 @@ function RenderPdfNode({
 
     case 'orderedList':
       return (
-        <View style={styles.list}>
+        <View style={baseStyles.list}>
           {node.content?.map((child, i) => (
-            <View key={i} style={styles.listItem}>
-              <Text style={styles.listBullet}>{i + 1}.</Text>
-              <View style={styles.listContent}>
-                <RenderPdfNode node={child} context={context} styles={styles} />
+            <View key={i} style={baseStyles.listItem}>
+              <Text style={baseStyles.listBullet}>{i + 1}.</Text>
+              <View style={baseStyles.listContent}>
+                <RenderPdfNode node={child} context={context} styleConfig={styleConfig} isHeaderFooter={isHeaderFooter} />
               </View>
             </View>
           ))}
@@ -334,33 +325,32 @@ function RenderPdfNode({
 
     case 'listItem':
       return (
-        <View style={styles.listItemContent}>
-          {node.content?.map((child, i) => (
-            <RenderPdfNode key={i} node={child} context={context} styles={styles} />
-          ))}
-        </View>
+        <Text>
+          {node.content?.map((child, i) => {
+            if (child.type === 'paragraph') {
+              return child.content?.map((c, j) => (
+                <RenderPdfNode key={`${i}-${j}`} node={c} context={context} styleConfig={styleConfig} isHeaderFooter={isHeaderFooter} />
+              ))
+            }
+            return <RenderPdfNode key={i} node={child} context={context} styleConfig={styleConfig} isHeaderFooter={isHeaderFooter} />
+          })}
+        </Text>
       )
 
     case 'blockquote':
       return (
-        <View style={styles.blockquote}>
+        <View style={baseStyles.blockquote}>
           {node.content?.map((child, i) => (
-            <RenderPdfNode key={i} node={child} context={context} styles={styles} />
+            <RenderPdfNode key={i} node={child} context={context} styleConfig={styleConfig} isHeaderFooter={isHeaderFooter} />
           ))}
         </View>
       )
 
     case 'horizontalRule':
-      return <View style={styles.hr} />
+      return <View style={[baseStyles.hr, isHeaderFooter ? { borderBottomColor: styleConfig.colorePrimario } : {}]} />
 
     case 'hardBreak':
       return <Text>{'\n'}</Text>
-
-    case 'image': {
-      const src = node.attrs?.src as string
-      if (!src) return null
-      return <Image src={src} style={styles.image} />
-    }
 
     // Variabili dinamiche
     case 'variableMention': {
@@ -369,18 +359,112 @@ function RenderPdfNode({
       const resolved = resolveVariable(varId, context)
 
       if (resolved) {
+        // In header/footer, eredita il colore dal contesto
         return <Text>{resolved}</Text>
       }
       // Placeholder se non risolto
-      return <Text style={styles.variablePlaceholder}>[{label}]</Text>
+      return <Text style={baseStyles.variablePlaceholder}>[{label}]</Text>
     }
 
     // Blocchi dinamici
     case 'dynamicBlock': {
       const blockType = node.attrs?.blockType as string
+      const config = (node.attrs?.config as Record<string, unknown>) || {}
       const data = resolveBlockData(blockType, context)
 
       switch (blockType) {
+        case 'header': {
+          // Header azienda (normalmente già nel documento header, ma se nel contenuto)
+          const nome = (data.nome as string) || ''
+          const indirizzo = (data.indirizzo as string) || ''
+          const email = (data.email as string) || ''
+          const telefono = (data.telefono as string) || ''
+          const piva = (data.piva as string) || ''
+
+          return (
+            <View style={{ marginBottom: 16 }}>
+              <Text style={[baseStyles.h2, { color: styleConfig.colorePrimario }]}>{nome}</Text>
+              {config.showAddress !== false && indirizzo && (
+                <Text style={{ color: styleConfig.coloreSecondario }}>{indirizzo}</Text>
+              )}
+              {config.showContacts !== false && (email || telefono) && (
+                <Text style={{ fontSize: 9, color: '#6b7280', marginTop: 4 }}>
+                  {[email, telefono].filter(Boolean).join(' • ')}
+                </Text>
+              )}
+              {config.showPiva !== false && piva && (
+                <Text style={{ fontSize: 9, color: '#6b7280' }}>P.IVA {piva}</Text>
+              )}
+            </View>
+          )
+        }
+
+        case 'cliente': {
+          const nome = (data.nome as string) || ''
+          const indirizzo = (data.indirizzo as string) || ''
+          const email = (data.email as string) || ''
+          const telefono = (data.telefono as string) || ''
+          const cf = (data.cf as string) || ''
+          const piva = (data.piva as string) || ''
+
+          return (
+            <View style={{ marginBottom: 12 }}>
+              <Text style={{ fontSize: 9, color: '#6b7280', marginBottom: 4 }}>Destinatario:</Text>
+              <Text style={baseStyles.bold}>{nome}</Text>
+              {config.showAddress !== false && indirizzo && (
+                <Text style={{ color: '#4b5563' }}>{indirizzo}</Text>
+              )}
+              {config.showContacts !== false && (email || telefono) && (
+                <Text style={{ fontSize: 9, color: '#6b7280' }}>
+                  {[email, telefono].filter(Boolean).join(' • ')}
+                </Text>
+              )}
+              {config.showCf !== false && cf && (
+                <Text style={{ fontSize: 9, color: '#6b7280' }}>C.F. {cf}</Text>
+              )}
+              {config.showPiva !== false && piva && (
+                <Text style={{ fontSize: 9, color: '#6b7280' }}>P.IVA {piva}</Text>
+              )}
+            </View>
+          )
+        }
+
+        case 'proprieta': {
+          const nome = (data.nome as string) || ''
+          const indirizzo = (data.indirizzo as string) || ''
+          const mq = (data.mq as string) || ''
+          const camere = (data.camere as string) || ''
+          const bagni = (data.bagni as string) || ''
+          const maxOspiti = (data.maxOspiti as string) || ''
+          const cir = (data.cir as string) || ''
+          const cin = (data.cin as string) || ''
+
+          return (
+            <View style={{ marginBottom: 12 }}>
+              <Text style={{ fontSize: 9, color: '#6b7280', marginBottom: 4 }}>Proprietà:</Text>
+              <Text style={baseStyles.bold}>{nome}</Text>
+              {config.showAddress !== false && indirizzo && (
+                <Text style={{ color: '#4b5563' }}>{indirizzo}</Text>
+              )}
+              {config.showDetails !== false && (mq || camere || bagni || maxOspiti) && (
+                <Text style={{ fontSize: 9, color: '#6b7280' }}>
+                  {[
+                    mq ? `${mq} mq` : null,
+                    camere ? `${camere} camere` : null,
+                    bagni ? `${bagni} bagni` : null,
+                    maxOspiti ? `Max ${maxOspiti} ospiti` : null,
+                  ].filter(Boolean).join(' • ')}
+                </Text>
+              )}
+              {config.showCodes !== false && (cir || cin) && (
+                <Text style={{ fontSize: 9, color: '#6b7280' }}>
+                  {[cir ? `CIR: ${cir}` : null, cin ? `CIN: ${cin}` : null].filter(Boolean).join(' • ')}
+                </Text>
+              )}
+            </View>
+          )
+        }
+
         case 'serviziTabella': {
           const items = (data.items as Array<{
             nome: string
@@ -388,51 +472,139 @@ function RenderPdfNode({
             quantita: number
             prezzo_unitario: number
             prezzo_totale: number
+            sconto_percentuale?: number
+            note?: string | null
           }>) || []
 
           if (items.length === 0) {
             return <Text style={{ color: '#9ca3af', marginBottom: 8 }}>[Nessun servizio]</Text>
           }
 
+          // Raggruppa items per sezione
+          const serviziAvviamento = items.filter(
+            item => !item.nome.toLowerCase().includes('lancio ota') &&
+                   !item.nome.toLowerCase().includes('gestione online') &&
+                   !item.nome.toLowerCase().includes('gestione completa') &&
+                   item.prezzo_totale > 0
+          )
+          const lancioOTA = items.find(item => item.nome.toLowerCase().includes('lancio ota'))
+          const gestione = items.find(
+            item => item.nome.toLowerCase().includes('gestione online') ||
+                   item.nome.toLowerCase().includes('gestione completa')
+          )
+
+          // Calcola prezzo listino originale
+          const calcolaListino = (item: typeof items[0]) => {
+            if (item.sconto_percentuale && item.sconto_percentuale > 0) {
+              return Math.round(item.prezzo_totale / (1 - item.sconto_percentuale / 100))
+            }
+            return item.prezzo_totale
+          }
+
           return (
-            <View style={styles.table}>
-              {/* Header */}
-              <View style={[styles.tableRow, styles.tableRowHeader]}>
-                <View style={[styles.tableCell, styles.tableCellHeader, { flex: 3 }]}>
-                  <Text>Servizio</Text>
-                </View>
-                <View style={[styles.tableCell, styles.tableCellHeader, { flex: 1 }]}>
-                  <Text>Qtà</Text>
-                </View>
-                <View style={[styles.tableCell, styles.tableCellHeader, { flex: 1.5 }]}>
-                  <Text>Prezzo</Text>
-                </View>
-                <View style={[styles.tableCell, styles.tableCellHeader, styles.tableCellLast, { flex: 1.5 }]}>
-                  <Text>Totale</Text>
-                </View>
-              </View>
-              {/* Rows */}
-              {items.map((item, i) => (
-                <View key={i} style={styles.tableRow}>
-                  <View style={[styles.tableCell, { flex: 3 }]}>
-                    <Text style={styles.bold}>{item.nome}</Text>
-                    {item.descrizione && (
-                      <Text style={{ fontSize: 8, color: '#6b7280', marginTop: 2 }}>
-                        {item.descrizione}
-                      </Text>
-                    )}
+            <View style={{ marginVertical: 12 }}>
+              {/* Servizi Avviamento */}
+              {serviziAvviamento.length > 0 && (
+                <View style={{ marginBottom: 16 }}>
+                  <Text style={{ fontSize: 9, fontWeight: 'bold', color: '#6b7280', marginBottom: 8, textTransform: 'uppercase' }}>
+                    Servizi Avviamento
+                  </Text>
+                  <View style={baseStyles.table}>
+                    {/* Header */}
+                    <View style={[baseStyles.tableRow, baseStyles.tableRowHeader]}>
+                      <View style={[baseStyles.tableCell, baseStyles.tableCellHeader, { flex: 3 }]}>
+                        <Text>Servizio</Text>
+                      </View>
+                      <View style={[baseStyles.tableCell, baseStyles.tableCellHeader, { flex: 1 }]}>
+                        <Text>Listino</Text>
+                      </View>
+                      <View style={[baseStyles.tableCell, baseStyles.tableCellHeader, baseStyles.tableCellLast, { flex: 1 }]}>
+                        <Text>Prezzo</Text>
+                      </View>
+                    </View>
+                    {/* Rows */}
+                    {serviziAvviamento.map((item, i) => {
+                      const listino = calcolaListino(item)
+                      const hasSconto = item.sconto_percentuale && item.sconto_percentuale > 0
+                      return (
+                        <View key={i} style={baseStyles.tableRow}>
+                          <View style={[baseStyles.tableCell, { flex: 3 }]}>
+                            <Text style={baseStyles.bold}>{item.nome}</Text>
+                            {item.descrizione && (
+                              <Text style={{ fontSize: 8, color: '#6b7280', marginTop: 2 }}>
+                                {item.descrizione}
+                              </Text>
+                            )}
+                          </View>
+                          <View style={[baseStyles.tableCell, { flex: 1 }]}>
+                            <Text style={hasSconto ? { textDecoration: 'line-through', color: '#9ca3af' } : {}}>
+                              {formatCurrency(listino)}
+                            </Text>
+                          </View>
+                          <View style={[baseStyles.tableCell, baseStyles.tableCellLast, { flex: 1 }]}>
+                            <Text style={[baseStyles.bold, hasSconto ? { color: '#16a34a' } : {}]}>
+                              {formatCurrency(item.prezzo_totale)}
+                              {hasSconto && ` (-${item.sconto_percentuale}%)`}
+                            </Text>
+                          </View>
+                        </View>
+                      )
+                    })}
                   </View>
-                  <View style={[styles.tableCell, { flex: 1 }]}>
-                    <Text>{item.quantita}</Text>
-                  </View>
-                  <View style={[styles.tableCell, { flex: 1.5 }]}>
-                    <Text>{formatCurrency(item.prezzo_unitario)}</Text>
-                  </View>
-                  <View style={[styles.tableCell, styles.tableCellLast, { flex: 1.5 }]}>
-                    <Text>{formatCurrency(item.prezzo_totale)}</Text>
+                </View>
+              )}
+
+              {/* Pacchetto Lancio OTA */}
+              {lancioOTA && (
+                <View style={{ marginBottom: 16 }}>
+                  <Text style={{ fontSize: 9, fontWeight: 'bold', color: '#6b7280', marginBottom: 8, textTransform: 'uppercase' }}>
+                    Pacchetto Lancio OTA
+                  </Text>
+                  <View style={{ padding: 12, backgroundColor: '#f0fdf4', borderWidth: 1, borderColor: '#bbf7d0', borderRadius: 4 }}>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                      <View style={{ flex: 1 }}>
+                        <Text style={baseStyles.bold}>{lancioOTA.nome}</Text>
+                        {lancioOTA.descrizione && (
+                          <Text style={{ fontSize: 9, color: '#4b5563', marginTop: 4 }}>{lancioOTA.descrizione}</Text>
+                        )}
+                        <Text style={{ fontSize: 8, color: '#15803d', marginTop: 4 }}>
+                          Include: Annuncio Booking.com (€250) + Annuncio Airbnb (€250)
+                        </Text>
+                      </View>
+                      <View style={{ alignItems: 'flex-end' }}>
+                        <Text style={{ textDecoration: 'line-through', color: '#9ca3af' }}>€500</Text>
+                        <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#16a34a' }}>
+                          {formatCurrency(lancioOTA.prezzo_totale)}
+                        </Text>
+                        <Text style={{ fontSize: 8, color: '#16a34a' }}>-60%</Text>
+                      </View>
+                    </View>
                   </View>
                 </View>
-              ))}
+              )}
+
+              {/* Gestione */}
+              {gestione && (
+                <View style={{ marginBottom: 16 }}>
+                  <Text style={{ fontSize: 9, fontWeight: 'bold', color: '#6b7280', marginBottom: 8, textTransform: 'uppercase' }}>
+                    Gestione
+                  </Text>
+                  <View style={{ padding: 12, backgroundColor: '#eff6ff', borderWidth: 1, borderColor: '#bfdbfe', borderRadius: 4 }}>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                      <View style={{ flex: 1 }}>
+                        <Text style={baseStyles.bold}>{gestione.nome}</Text>
+                        {gestione.descrizione && (
+                          <Text style={{ fontSize: 9, color: '#4b5563', marginTop: 4 }}>{gestione.descrizione}</Text>
+                        )}
+                      </View>
+                      <View style={{ alignItems: 'flex-end' }}>
+                        <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#2563eb' }}>30%</Text>
+                        <Text style={{ fontSize: 8, color: '#6b7280' }}>sul fatturato</Text>
+                      </View>
+                    </View>
+                  </View>
+                </View>
+              )}
             </View>
           )
         }
@@ -443,133 +615,87 @@ function RenderPdfNode({
           const totale = data.totale as string
 
           return (
-            <View style={styles.totalsBox}>
+            <View style={baseStyles.totalsBox}>
               {subtotale && (
-                <View style={styles.totalRow}>
+                <View style={baseStyles.totalRow}>
                   <Text>Subtotale:</Text>
                   <Text>{subtotale}</Text>
                 </View>
               )}
               {sconto && sconto !== '€ 0,00' && (
-                <View style={styles.totalRow}>
+                <View style={baseStyles.totalRow}>
                   <Text>Sconto:</Text>
                   <Text>-{sconto}</Text>
                 </View>
               )}
-              <View style={styles.totalRowFinal}>
-                <Text style={styles.bold}>TOTALE:</Text>
-                <Text style={styles.bold}>{totale || '—'}</Text>
+              <View style={baseStyles.totalRowFinal}>
+                <Text style={baseStyles.bold}>TOTALE:</Text>
+                <Text style={baseStyles.bold}>{totale || '—'}</Text>
               </View>
-            </View>
-          )
-        }
-
-        case 'cliente': {
-          const nome = data.nome as string || ''
-          const indirizzo = data.indirizzo as string || ''
-          const email = data.email as string || ''
-          const telefono = data.telefono as string || ''
-          const cf = data.cf as string || ''
-          const piva = data.piva as string || ''
-
-          return (
-            <View style={{ marginBottom: 12 }}>
-              <Text style={{ fontSize: 8, color: '#6b7280', marginBottom: 2 }}>Destinatario:</Text>
-              <Text style={{ fontWeight: 'bold', color: '#111827' }}>{nome}</Text>
-              {indirizzo && <Text style={{ color: '#4b5563' }}>{indirizzo}</Text>}
-              {(email || telefono) && (
-                <Text style={{ fontSize: 9, color: '#6b7280' }}>
-                  {[email, telefono].filter(Boolean).join(' • ')}
-                </Text>
-              )}
-              {cf && <Text style={{ fontSize: 9, color: '#6b7280' }}>C.F. {cf}</Text>}
-              {piva && <Text style={{ fontSize: 9, color: '#6b7280' }}>P.IVA {piva}</Text>}
-            </View>
-          )
-        }
-
-        case 'proprieta': {
-          const nome = data.nome as string || ''
-          const indirizzo = data.indirizzo as string || ''
-          const mq = data.mq as string || ''
-          const camere = data.camere as string || ''
-          const bagni = data.bagni as string || ''
-          const maxOspiti = data.maxOspiti as string || ''
-          const cir = data.cir as string || ''
-          const cin = data.cin as string || ''
-
-          const details = [
-            mq ? `${mq} mq` : null,
-            camere ? `${camere} camere` : null,
-            bagni ? `${bagni} bagni` : null,
-            maxOspiti ? `Max ${maxOspiti} ospiti` : null,
-          ].filter(Boolean).join(' • ')
-
-          const codes = [
-            cir ? `CIR: ${cir}` : null,
-            cin ? `CIN: ${cin}` : null,
-          ].filter(Boolean).join(' • ')
-
-          return (
-            <View style={{ marginBottom: 12 }}>
-              <Text style={{ fontSize: 8, color: '#6b7280', marginBottom: 2 }}>Proprietà:</Text>
-              <Text style={{ fontWeight: 'bold', color: '#111827' }}>{nome}</Text>
-              {indirizzo && <Text style={{ color: '#4b5563' }}>{indirizzo}</Text>}
-              {details && <Text style={{ fontSize: 9, color: '#6b7280' }}>{details}</Text>}
-              {codes && <Text style={{ fontSize: 9, color: '#6b7280' }}>{codes}</Text>}
             </View>
           )
         }
 
         case 'validita': {
-          const config = (node.attrs?.config as { days?: number }) || {}
-          const days = config.days || 30
+          const days = (config.days as number) || 30
           return (
-            <View style={{ marginVertical: 10 }}>
-              <Text style={{ fontStyle: 'italic', color: '#4b5563' }}>
-                Questa proposta è valida per {days} giorni dalla data di emissione.
-              </Text>
-            </View>
+            <Text style={{ marginVertical: 12, color: '#4b5563', fontStyle: 'italic' }}>
+              Questa proposta è valida per {days} giorni dalla data di emissione.
+            </Text>
           )
         }
 
         case 'termini':
           return (
-            <View style={{ marginVertical: 10 }}>
-              <Text style={{ fontWeight: 'bold', marginBottom: 6 }}>Termini e Condizioni:</Text>
-              <Text style={{ color: '#4b5563', marginBottom: 2 }}>• I prezzi sono da intendersi IVA esclusa salvo ove diversamente specificato</Text>
-              <Text style={{ color: '#4b5563', marginBottom: 2 }}>• Il pagamento deve essere effettuato entro 30 giorni dalla fatturazione</Text>
-              <Text style={{ color: '#4b5563' }}>• Per i servizi ricorrenti la commissione viene calcolata sul fatturato lordo</Text>
+            <View style={{ marginVertical: 12 }}>
+              <Text style={{ fontWeight: 'bold', marginBottom: 8 }}>Termini e Condizioni:</Text>
+              <Text style={{ fontSize: 9, color: '#4b5563', marginBottom: 4 }}>
+                • I prezzi sono da intendersi IVA esclusa salvo ove diversamente specificato
+              </Text>
+              <Text style={{ fontSize: 9, color: '#4b5563', marginBottom: 4 }}>
+                • Il pagamento deve essere effettuato entro 30 giorni dalla fatturazione
+              </Text>
+              <Text style={{ fontSize: 9, color: '#4b5563' }}>
+                • Per i servizi ricorrenti la commissione viene calcolata sul fatturato lordo
+              </Text>
             </View>
           )
 
         case 'firme': {
-          const config = (node.attrs?.config as { leftLabel?: string; rightLabel?: string }) || {}
-          const leftLabel = config.leftLabel || 'Il Fornitore'
-          const rightLabel = config.rightLabel || 'Il Cliente'
+          const leftLabel = (config.leftLabel as string) || 'Il Fornitore'
+          const rightLabel = (config.rightLabel as string) || 'Il Cliente'
           return (
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 40, marginBottom: 20 }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 40, marginBottom: 16 }}>
               <View style={{ alignItems: 'center' }}>
-                <View style={{ width: 120, height: 40, borderBottomWidth: 1, borderBottomColor: '#9ca3af', marginBottom: 4 }} />
-                <Text style={{ fontSize: 9, color: '#4b5563' }}>{leftLabel}</Text>
+                <View style={{ width: 120, height: 50, borderBottomWidth: 1, borderBottomColor: '#9ca3af' }} />
+                <Text style={{ fontSize: 9, color: '#4b5563', marginTop: 4 }}>{leftLabel}</Text>
               </View>
               <View style={{ alignItems: 'center' }}>
-                <View style={{ width: 120, height: 40, borderBottomWidth: 1, borderBottomColor: '#9ca3af', marginBottom: 4 }} />
-                <Text style={{ fontSize: 9, color: '#4b5563' }}>{rightLabel}</Text>
+                <View style={{ width: 120, height: 50, borderBottomWidth: 1, borderBottomColor: '#9ca3af' }} />
+                <Text style={{ fontSize: 9, color: '#4b5563', marginTop: 4 }}>{rightLabel}</Text>
               </View>
             </View>
           )
         }
 
-        case 'note':
+        case 'note': {
+          const noteStyles: Record<string, { bg: string; border: string }> = {
+            warning: { bg: '#fefce8', border: '#facc15' },
+            info: { bg: '#eff6ff', border: '#3b82f6' },
+            success: { bg: '#f0fdf4', border: '#22c55e' },
+            error: { bg: '#fef2f2', border: '#ef4444' },
+          }
+          const style = (config.style as string) || 'info'
+          const colors = noteStyles[style] || noteStyles.info
           return (
-            <View style={{ marginVertical: 10, padding: 10, backgroundColor: '#eff6ff', borderLeftWidth: 3, borderLeftColor: '#3b82f6' }}>
+            <View style={{ marginVertical: 12, padding: 12, backgroundColor: colors.bg, borderLeftWidth: 4, borderLeftColor: colors.border }}>
               <Text style={{ color: '#374151' }}>Nota importante da compilare...</Text>
             </View>
           )
+        }
 
         case 'separatore':
-          return <View style={styles.hr} />
+          return <View style={baseStyles.hr} />
 
         default:
           return null
@@ -582,7 +708,7 @@ function RenderPdfNode({
         return (
           <View>
             {node.content.map((child, i) => (
-              <RenderPdfNode key={i} node={child} context={context} styles={styles} />
+              <RenderPdfNode key={i} node={child} context={context} styleConfig={styleConfig} isHeaderFooter={isHeaderFooter} />
             ))}
           </View>
         )
@@ -605,7 +731,8 @@ export function PdfDocument({
   context,
   showHeaderFooter = true,
 }: PdfDocumentProps): React.ReactElement {
-  const styles = getStyles(context.azienda?.colore_primario)
+  // Configurazione stili dinamici
+  const styleConfig = getStyleConfig(context)
 
   // Header/footer da azienda o default
   const headerContent = showHeaderFooter
@@ -617,37 +744,37 @@ export function PdfDocument({
 
   return (
     <Document>
-      <Page size="A4" style={styles.page}>
+      <Page size="A4" style={baseStyles.page}>
         {/* Header */}
         {headerContent && (
-          <View style={styles.header} fixed>
-            {context.azienda?.logo_url && (
-              <Image src={context.azienda.logo_url} style={{ width: 100, marginBottom: 10 }} />
-            )}
+          <View style={baseStyles.header} fixed>
             <RenderPdfNode
               node={headerContent as unknown as TipTapNode}
               context={context}
-              styles={styles}
+              styleConfig={styleConfig}
+              isHeaderFooter={true}
             />
           </View>
         )}
 
         {/* Content */}
-        <View style={styles.content}>
+        <View style={baseStyles.content}>
           <RenderPdfNode
             node={content as unknown as TipTapNode}
             context={context}
-            styles={styles}
+            styleConfig={styleConfig}
+            isHeaderFooter={false}
           />
         </View>
 
         {/* Footer */}
         {footerContent && (
-          <View style={styles.footer} fixed>
+          <View style={baseStyles.footer} fixed>
             <RenderPdfNode
               node={footerContent as unknown as TipTapNode}
               context={context}
-              styles={styles}
+              styleConfig={styleConfig}
+              isHeaderFooter={true}
             />
           </View>
         )}

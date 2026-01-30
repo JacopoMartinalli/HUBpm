@@ -51,6 +51,8 @@ interface GeneraDocumentoDialogProps {
       quantita: number
       prezzo_unitario: number
       prezzo_totale: number
+      sconto_percentuale?: number | null
+      note?: string | null
     }>
   } | null
   onSuccess?: () => void

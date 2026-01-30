@@ -122,14 +122,14 @@ function renderBlockContent(blockType: string, config: Record<string, unknown>, 
         }
 
         case 'serviziTabella': {
-            const items = (resolvedData?.items as Array<{ nome: string; descrizione?: string | null; quantita: number; prezzo_unitario: number; prezzo_totale: number }>) || []
+            const items = (resolvedData?.items as Array<{ nome: string; descrizione?: string | null; quantita: number; prezzo_unitario: number; prezzo_totale: number; sconto_percentuale?: number; note?: string | null }>) || []
             const hasRealItems = items.length > 0
             const isFallback = !hasRealItems
 
             // Fallback items per anteprima
             const fallbackItems = [
-                { nome: 'Servizio esempio 1', descrizione: 'Descrizione servizio', quantita: 1, prezzo_unitario: 500, prezzo_totale: 500 },
-                { nome: 'Servizio esempio 2', descrizione: null, quantita: 2, prezzo_unitario: 150, prezzo_totale: 300 },
+                { nome: 'Servizio esempio 1', descrizione: 'Descrizione servizio', quantita: 1, prezzo_unitario: 500, prezzo_totale: 500, sconto_percentuale: 0 },
+                { nome: 'Servizio esempio 2', descrizione: null, quantita: 2, prezzo_unitario: 150, prezzo_totale: 300, sconto_percentuale: 0 },
             ]
 
             const displayItems = hasRealItems ? items : fallbackItems
@@ -138,39 +138,117 @@ function renderBlockContent(blockType: string, config: Record<string, unknown>, 
                 return new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' }).format(value)
             }
 
+            // Raggruppa items per sezione
+            const serviziAvviamento = displayItems.filter(
+                item => !item.nome.toLowerCase().includes('lancio ota') &&
+                       !item.nome.toLowerCase().includes('gestione online') &&
+                       !item.nome.toLowerCase().includes('gestione completa') &&
+                       item.prezzo_totale > 0
+            )
+            const lancioOTA = displayItems.find(item => item.nome.toLowerCase().includes('lancio ota'))
+            const gestione = displayItems.find(
+                item => item.nome.toLowerCase().includes('gestione online') ||
+                       item.nome.toLowerCase().includes('gestione completa')
+            )
+
+            // Calcola prezzo listino originale
+            const calcolaListino = (item: typeof displayItems[0]) => {
+                if (item.sconto_percentuale && item.sconto_percentuale > 0) {
+                    return Math.round(item.prezzo_totale / (1 - item.sconto_percentuale / 100))
+                }
+                return item.prezzo_totale
+            }
+
             return (
-                <div className="my-4">
-                    <table className="w-full border-collapse text-sm">
-                        <thead>
-                            <tr className="bg-gray-50" style={{ borderBottomColor: primaryColor || '#e5e7eb', borderBottomWidth: '2px' }}>
-                                <th className="text-left p-3 border border-gray-200 font-semibold" style={{ color: primaryColor }}>Servizio</th>
-                                {config.showQuantity !== false && (
-                                    <th className="text-center p-3 border border-gray-200 font-semibold w-20" style={{ color: primaryColor }}>Qtà</th>
-                                )}
-                                <th className="text-right p-3 border border-gray-200 font-semibold w-28" style={{ color: primaryColor }}>Prezzo</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {displayItems.map((item, index) => (
-                                <tr key={index}>
-                                    <td className={`p-3 border border-gray-200 ${isFallback ? 'text-amber-600' : ''}`}>
-                                        <div>{item.nome}</div>
-                                        {config.showDescription !== false && item.descrizione && (
-                                            <div className="text-xs text-gray-500 mt-0.5">{item.descrizione}</div>
-                                        )}
-                                    </td>
-                                    {config.showQuantity !== false && (
-                                        <td className={`text-center p-3 border border-gray-200 ${isFallback ? 'text-amber-600' : ''}`}>
-                                            {item.quantita}
-                                        </td>
-                                    )}
-                                    <td className={`text-right p-3 border border-gray-200 ${isFallback ? 'text-amber-600' : ''}`}>
-                                        {formatPrice(item.prezzo_totale)}
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
+                <div className="my-4 space-y-6">
+                    {/* Servizi Avviamento */}
+                    {serviziAvviamento.length > 0 && (
+                        <div>
+                            <div className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">
+                                Servizi Avviamento
+                            </div>
+                            <table className="w-full border-collapse text-sm">
+                                <thead>
+                                    <tr className="bg-gray-50" style={{ borderBottomColor: primaryColor || '#e5e7eb', borderBottomWidth: '2px' }}>
+                                        <th className="text-left p-3 border border-gray-200 font-semibold" style={{ color: primaryColor }}>Servizio</th>
+                                        <th className="text-right p-3 border border-gray-200 font-semibold w-24" style={{ color: primaryColor }}>Listino</th>
+                                        <th className="text-right p-3 border border-gray-200 font-semibold w-24" style={{ color: primaryColor }}>Prezzo</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {serviziAvviamento.map((item, index) => {
+                                        const listino = calcolaListino(item)
+                                        const hasSconto = item.sconto_percentuale && item.sconto_percentuale > 0
+                                        return (
+                                            <tr key={index}>
+                                                <td className={`p-3 border border-gray-200 ${isFallback ? 'text-amber-600' : ''}`}>
+                                                    <div className="font-medium">{item.nome}</div>
+                                                    {config.showDescription !== false && item.descrizione && (
+                                                        <div className="text-xs text-gray-500 mt-0.5">{item.descrizione}</div>
+                                                    )}
+                                                </td>
+                                                <td className={`text-right p-3 border border-gray-200 ${hasSconto ? 'text-gray-400 line-through' : ''} ${isFallback ? 'text-amber-600' : ''}`}>
+                                                    {formatPrice(listino)}
+                                                </td>
+                                                <td className={`text-right p-3 border border-gray-200 font-semibold ${hasSconto ? 'text-green-600' : ''} ${isFallback ? 'text-amber-600' : ''}`}>
+                                                    {formatPrice(item.prezzo_totale)}
+                                                    {hasSconto && <span className="text-xs ml-1">(-{item.sconto_percentuale}%)</span>}
+                                                </td>
+                                            </tr>
+                                        )
+                                    })}
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
+
+                    {/* Pacchetto Lancio OTA */}
+                    {lancioOTA && (
+                        <div>
+                            <div className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">
+                                Pacchetto Lancio OTA <span className="text-xs font-normal normal-case text-green-600">(esclusivo clienti gestione)</span>
+                            </div>
+                            <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                                <div className="flex justify-between items-start">
+                                    <div>
+                                        <div className="font-medium">{lancioOTA.nome}</div>
+                                        <div className="text-sm text-gray-600 mt-1">{lancioOTA.descrizione}</div>
+                                        <div className="text-xs text-green-700 mt-2">
+                                            Include: Annuncio Booking.com (€250) + Annuncio Airbnb (€250)
+                                        </div>
+                                    </div>
+                                    <div className="text-right">
+                                        <div className="text-gray-400 line-through">€500</div>
+                                        <div className="text-xl font-bold text-green-600">
+                                            {formatPrice(lancioOTA.prezzo_totale)}
+                                        </div>
+                                        <div className="text-xs text-green-600">-60%</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Gestione */}
+                    {gestione && (
+                        <div>
+                            <div className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">
+                                Gestione
+                            </div>
+                            <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                                <div className="flex justify-between items-start">
+                                    <div>
+                                        <div className="font-medium">{gestione.nome}</div>
+                                        <div className="text-sm text-gray-600 mt-1">{gestione.descrizione}</div>
+                                    </div>
+                                    <div className="text-right">
+                                        <div className="text-xl font-bold text-blue-600">30%</div>
+                                        <div className="text-xs text-gray-500">sul fatturato</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
             )
         }

@@ -292,6 +292,8 @@ export function ProposteProprietaView({
               quantita: item.quantita,
               prezzo_unitario: item.prezzo_unitario,
               prezzo_totale: item.prezzo_totale,
+              sconto_percentuale: item.sconto_percentuale ?? undefined,
+              note: item.note ?? undefined,
             })),
           }}
           onSuccess={() => setPropostaPerDocumento(null)}

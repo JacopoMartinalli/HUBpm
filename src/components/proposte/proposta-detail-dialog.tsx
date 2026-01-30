@@ -230,36 +230,133 @@ export function PropostaDetailDialog({
 
           <Separator />
 
-          {/* Servizi/Pacchetti */}
-          <div>
-            <h4 className="font-medium mb-3">
-              Servizi inclusi ({proposta.items?.length || 0})
-            </h4>
+          {/* Servizi/Pacchetti raggruppati */}
+          <div className="space-y-4">
             {proposta.items && proposta.items.length > 0 ? (
-              <div className="space-y-2">
-                {proposta.items.map((item) => (
-                  <div
-                    key={item.id}
-                    className="flex items-center justify-between p-3 bg-muted/50 rounded-lg"
-                  >
-                    <div className="flex-1">
-                      <p className="font-medium">{item.nome}</p>
-                      {item.descrizione && (
-                        <p className="text-sm text-muted-foreground">{item.descrizione}</p>
-                      )}
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {item.quantita} x {formatCurrency(item.prezzo_unitario)}
-                        {item.sconto_percentuale > 0 && (
-                          <span className="text-green-600 ml-2">
-                            -{item.sconto_percentuale}%
-                          </span>
-                        )}
-                      </p>
+              <>
+                {/* Sezione Servizi Avviamento */}
+                {(() => {
+                  const serviziAvviamento = proposta.items.filter(
+                    item => !item.nome.toLowerCase().includes('lancio ota') &&
+                           !item.nome.toLowerCase().includes('gestione online') &&
+                           item.prezzo_totale > 0
+                  )
+                  if (serviziAvviamento.length === 0) return null
+                  return (
+                    <div>
+                      <h4 className="font-medium mb-3 text-sm uppercase tracking-wide text-muted-foreground">
+                        Servizi Avviamento
+                      </h4>
+                      <div className="space-y-2">
+                        {serviziAvviamento.map((item) => {
+                          // Calcola prezzo listino originale
+                          let prezzoListino = item.prezzo_unitario
+                          if (item.sconto_percentuale > 0) {
+                            prezzoListino = Math.round(item.prezzo_totale / (1 - item.sconto_percentuale / 100))
+                          }
+                          const hasSconto = item.sconto_percentuale > 0
+
+                          return (
+                            <div
+                              key={item.id}
+                              className="flex items-center justify-between p-3 bg-muted/50 rounded-lg"
+                            >
+                              <div className="flex-1">
+                                <p className="font-medium">{item.nome}</p>
+                                {item.descrizione && (
+                                  <p className="text-sm text-muted-foreground">{item.descrizione}</p>
+                                )}
+                              </div>
+                              <div className="text-right">
+                                {hasSconto ? (
+                                  <>
+                                    <p className="text-sm text-muted-foreground line-through">
+                                      {formatCurrency(prezzoListino)}
+                                    </p>
+                                    <p className="font-semibold text-green-600">
+                                      {formatCurrency(item.prezzo_totale)}
+                                      <span className="text-xs ml-1">(-{item.sconto_percentuale}%)</span>
+                                    </p>
+                                  </>
+                                ) : (
+                                  <p className="font-semibold">{formatCurrency(item.prezzo_totale)}</p>
+                                )}
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
                     </div>
-                    <p className="font-semibold">{formatCurrency(item.prezzo_totale)}</p>
-                  </div>
-                ))}
-              </div>
+                  )
+                })()}
+
+                {/* Sezione Pacchetto Lancio OTA */}
+                {(() => {
+                  const lancioOTA = proposta.items.find(
+                    item => item.nome.toLowerCase().includes('lancio ota')
+                  )
+                  if (!lancioOTA) return null
+                  return (
+                    <div>
+                      <h4 className="font-medium mb-3 text-sm uppercase tracking-wide text-muted-foreground">
+                        Pacchetto Lancio OTA
+                        <span className="text-xs font-normal normal-case ml-2 text-green-600">
+                          (esclusivo clienti gestione)
+                        </span>
+                      </h4>
+                      <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1">
+                            <p className="font-medium">{lancioOTA.nome}</p>
+                            <p className="text-sm text-muted-foreground">{lancioOTA.descrizione}</p>
+                            {lancioOTA.note && (
+                              <p className="text-xs text-muted-foreground mt-1">{lancioOTA.note}</p>
+                            )}
+                          </div>
+                          <div className="text-right">
+                            <p className="text-sm text-muted-foreground line-through">€500</p>
+                            <p className="font-semibold text-green-600 text-lg">
+                              {formatCurrency(lancioOTA.prezzo_totale)}
+                              <span className="text-xs ml-1">(-60%)</span>
+                            </p>
+                          </div>
+                        </div>
+                        <div className="mt-2 pt-2 border-t border-green-200 text-xs text-green-700">
+                          Include: Annuncio Booking.com (€250) + Annuncio Airbnb (€250)
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })()}
+
+                {/* Sezione Gestione */}
+                {(() => {
+                  const gestione = proposta.items.find(
+                    item => item.nome.toLowerCase().includes('gestione online') ||
+                           item.nome.toLowerCase().includes('gestione completa')
+                  )
+                  if (!gestione) return null
+                  return (
+                    <div>
+                      <h4 className="font-medium mb-3 text-sm uppercase tracking-wide text-muted-foreground">
+                        Gestione
+                      </h4>
+                      <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1">
+                            <p className="font-medium">{gestione.nome}</p>
+                            <p className="text-sm text-muted-foreground">{gestione.descrizione}</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="font-semibold text-blue-600 text-lg">30%</p>
+                            <p className="text-xs text-muted-foreground">sul fatturato</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })()}
+              </>
             ) : (
               <p className="text-muted-foreground text-center py-4">
                 Nessun servizio aggiunto
