@@ -1,7 +1,7 @@
 'use client'
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { StatsCard, LoadingPage, FaseBadge } from '@/components/shared'
+import { StatsCard, LoadingPage, FaseBadge, PortfolioStats } from '@/components/shared'
 import { useDashboardStats, useTaskPendenti, usePrenotazioniProssime, useAppuntamentiProssimi } from '@/lib/hooks'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import {
@@ -282,6 +282,12 @@ export default function DashboardPage() {
             <p className="text-xs text-muted-foreground">Richiedono attenzione</p>
           </CardContent>
         </Card>
+      </div>
+
+      {/* Portfolio Stats Dettagliate */}
+      <div className="pt-4 border-t">
+        <h2 className="text-lg font-semibold mb-4">Statistiche Portafoglio</h2>
+        <PortfolioStats />
       </div>
     </div>
   )

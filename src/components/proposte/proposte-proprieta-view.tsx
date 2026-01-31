@@ -29,13 +29,15 @@ interface ProposteProprietaViewProps {
   contattoId: string
   proprietaNome?: string
   faseProprieta?: string
+  onPropostaAccettata?: () => void
 }
 
 export function ProposteProprietaView({
   proprietaId,
   contattoId,
   proprietaNome,
-  faseProprieta
+  faseProprieta,
+  onPropostaAccettata
 }: ProposteProprietaViewProps) {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
   const [deletePropostaId, setDeletePropostaId] = useState<string | null>(null)
@@ -73,6 +75,8 @@ export function ProposteProprietaView({
     try {
       await accettaMutation.mutateAsync({ propostaId: accettaPropostaId })
       setAccettaPropostaId(null)
+      // Notifica il parent che la proposta è stata accettata (per pulire eventuali errori di fase)
+      onPropostaAccettata?.()
     } catch (error) {
       console.error('Errore accettazione proposta:', error)
     }

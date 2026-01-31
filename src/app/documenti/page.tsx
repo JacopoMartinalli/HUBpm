@@ -12,7 +12,6 @@ import {
   Eye,
   EyeOff,
   Download,
-  ExternalLink,
   FilePlus,
   Archive,
   AlertCircle,
@@ -22,7 +21,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Card, CardContent } from '@/components/ui/card'
-import { PageHeader, LoadingSpinner, EmptyState, ConfirmDialog } from '@/components/shared'
+import { PageHeader, LoadingSpinner, ConfirmDialog } from '@/components/shared'
 import {
   useDocumentTemplates,
   useDeleteDocumentTemplate,

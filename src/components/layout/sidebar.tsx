@@ -19,6 +19,7 @@ import {
   Briefcase,
   FileText,
   ExternalLink,
+  BookOpen,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -99,6 +100,16 @@ const navigation: NavSection[] = [
         title: 'Documenti',
         href: '/documenti',
         icon: FileText,
+      },
+    ],
+  },
+  {
+    title: 'Knowledge Base',
+    items: [
+      {
+        title: 'Wiki & Procedure',
+        href: '/wiki',
+        icon: BookOpen,
       },
     ],
   },

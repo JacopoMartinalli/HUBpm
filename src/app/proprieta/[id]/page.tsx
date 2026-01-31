@@ -2,7 +2,7 @@
 
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, Building2, MapPin, Edit, Trash2, Home, FileText, Key, Handshake, Phone, Mail } from 'lucide-react'
+import { ArrowLeft, Building2, MapPin, Edit, Trash2, Home, FileText, Key, Handshake, Phone, Mail, FolderOpen } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
@@ -14,6 +14,7 @@ import { CommercialeSection } from '@/components/proprieta/sections/commerciale-
 import { StrutturaSection } from '@/components/proprieta/sections/struttura-section'
 import { OperativoSection } from '@/components/proprieta/sections/operativo-section'
 import { TeamSection } from '@/components/proprieta/sections/team-section'
+import { DocumentiSection } from '@/components/proprieta/sections/documenti-section'
 import { useProprieta, useUpdateProprieta, useDeleteProprieta, useLocaliByProprieta, useAssetByProprieta, useCambioFase, useErogazionePacchettiByProprieta, usePartnerProprietaByProprieta, useDeletePartnerProprieta, usePartnerList, useCreatePartnerProprieta } from '@/lib/hooks'
 import { TIPOLOGIE_PROPRIETA } from '@/constants'
 import { useState } from 'react'
@@ -29,6 +30,7 @@ import {
 const SECTIONS = [
   { id: 'panoramica', label: 'Panoramica', icon: Building2 },
   { id: 'commerciale', label: 'Commerciale', icon: FileText },
+  { id: 'documenti', label: 'Documenti', icon: FolderOpen },
   { id: 'struttura', label: 'Struttura', icon: Home },
   { id: 'operativo', label: 'Operativo', icon: Key },
   { id: 'team', label: 'Team', icon: Handshake },
@@ -217,6 +219,13 @@ export default function ProprietaDetailPage() {
               proprietaId={id}
               contattoId={proprieta.contatto_id}
               proprietaNome={proprieta.nome}
+              faseProprieta={proprieta.fase}
+              onPropostaAccettata={() => setFaseError(null)}
+            />
+          )}
+          {activeSection === 'documenti' && (
+            <DocumentiSection
+              proprietaId={id}
               faseProprieta={proprieta.fase}
             />
           )}

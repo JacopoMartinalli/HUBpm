@@ -10,10 +10,13 @@ import {
   Radio,
   Home,
   ArrowRight,
+  FolderOpen,
+  CheckSquare,
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { Progress } from '@/components/ui/progress'
 import {
   Tooltip,
   TooltipContent,
@@ -22,6 +25,7 @@ import {
 } from '@/components/ui/tooltip'
 import { cn } from '@/lib/utils'
 import type { FaseProprieta } from '@/types/database'
+import { useStatoCompletamentoFase } from '@/lib/hooks'
 
 // Definizione delle 4 fasi principali
 const FASI_PIPELINE = [
@@ -80,6 +84,13 @@ export function PipelineProprietaCard({
   const prossimaFase = faseCorrenteIndex < FASI_PIPELINE.length - 1
     ? FASI_PIPELINE[faseCorrenteIndex + 1]
     : null
+
+  // Hook per stato completamento fase
+  const { data: statoCompletamento } = useStatoCompletamentoFase(
+    'proprieta',
+    faseCorrente,
+    proprietaId
+  )
 
   const getColorClasses = (color: string, isActive: boolean, isPast: boolean) => {
     const colors: Record<string, { bg: string; border: string; text: string }> = {
@@ -242,6 +253,60 @@ export function PipelineProprietaCard({
                 </Button>
               </div>
             )}
+          </div>
+        )}
+
+        {/* Progress bar requisiti fase */}
+        {statoCompletamento && (statoCompletamento.documentiTotali > 0 || statoCompletamento.taskTotali > 0) && (
+          <div className="p-4 bg-muted/30 rounded-lg border space-y-3">
+            <div className="flex items-center justify-between">
+              <h4 className="text-sm font-medium flex items-center gap-2">
+                <CheckSquare className="h-4 w-4" />
+                Completamento Requisiti
+              </h4>
+              <Badge variant={statoCompletamento.puoAvanzare ? 'default' : 'secondary'}>
+                {statoCompletamento.percentualeTotale}%
+              </Badge>
+            </div>
+
+            {/* Progress generale */}
+            <Progress value={statoCompletamento.percentualeTotale} className="h-2" />
+
+            {/* Dettaglio documenti e task */}
+            <div className="grid grid-cols-2 gap-4 pt-2">
+              {/* Documenti */}
+              <div className="space-y-1.5">
+                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <FolderOpen className="h-3.5 w-3.5" />
+                  <span>Documenti</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Progress value={statoCompletamento.percentualeDocumenti} className="h-1.5 flex-1" />
+                  <span className="text-xs font-medium">
+                    {statoCompletamento.documentiCompletati}/{statoCompletamento.documentiTotali}
+                  </span>
+                </div>
+                {statoCompletamento.documentiObbligatoriTotali > 0 && (
+                  <p className="text-xs text-muted-foreground">
+                    Obbligatori: {statoCompletamento.documentiObbligatoriCompletati}/{statoCompletamento.documentiObbligatoriTotali}
+                  </p>
+                )}
+              </div>
+
+              {/* Task */}
+              <div className="space-y-1.5">
+                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <CheckSquare className="h-3.5 w-3.5" />
+                  <span>Task</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Progress value={statoCompletamento.percentualeTask} className="h-1.5 flex-1" />
+                  <span className="text-xs font-medium">
+                    {statoCompletamento.taskCompletati}/{statoCompletamento.taskTotali}
+                  </span>
+                </div>
+              </div>
+            </div>
           </div>
         )}
 

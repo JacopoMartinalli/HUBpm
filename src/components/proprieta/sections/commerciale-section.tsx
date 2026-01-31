@@ -11,9 +11,10 @@ interface CommercialeSectionProps {
   contattoId: string
   proprietaNome: string
   faseProprieta: string
+  onPropostaAccettata?: () => void
 }
 
-export function CommercialeSection({ proprietaId, contattoId, proprietaNome, faseProprieta }: CommercialeSectionProps) {
+export function CommercialeSection({ proprietaId, contattoId, proprietaNome, faseProprieta, onPropostaAccettata }: CommercialeSectionProps) {
   const [subView, setSubView] = useState<'proposte' | 'servizi'>('proposte')
 
   return (
@@ -47,6 +48,7 @@ export function CommercialeSection({ proprietaId, contattoId, proprietaNome, fas
           contattoId={contattoId}
           proprietaNome={proprietaNome}
           faseProprieta={faseProprieta}
+          onPropostaAccettata={onPropostaAccettata}
         />
       ) : (
         <ErogazioneProprietaView
