@@ -1,6 +1,6 @@
 'use client'
 
-import { Building2, Home, Bed, Bath, Square, Users, ClipboardCheck, Check } from 'lucide-react'
+import { Building2, Home, Bed, Bath, Square, Users, ClipboardCheck, Check, Euro } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -19,6 +19,7 @@ interface PanoramicaSectionProps {
 export function PanoramicaSection({ proprieta, id, onUpdateProprieta }: PanoramicaSectionProps) {
   const faseInfo = FASI_PROPRIETA.find(f => f.id === proprieta.fase)
   const tipologiaLabel = TIPOLOGIE_PROPRIETA.find(t => t.id === proprieta.tipologia)?.label || proprieta.tipologia
+  const isLive = proprieta.fase === 'P4' || proprieta.fase === 'P5'
 
   return (
     <div className="space-y-6">
@@ -38,10 +39,6 @@ export function PanoramicaSection({ proprieta, id, onUpdateProprieta }: Panorami
                 <p className="font-medium">{tipologiaLabel}</p>
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Commissione</p>
-                <p className="font-medium">{formatPercent(proprieta.commissione_percentuale)}</p>
-              </div>
-              <div>
                 <p className="text-sm text-muted-foreground">Proprietario</p>
                 <p className="font-medium">
                   {proprieta.contatto
@@ -52,6 +49,38 @@ export function PanoramicaSection({ proprieta, id, onUpdateProprieta }: Panorami
               <div>
                 <p className="text-sm text-muted-foreground">Fase</p>
                 <p className="font-medium">{faseInfo?.label}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Dati Economici */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              <Euro className="h-4 w-4" />
+              Dati Economici
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <p className="text-sm text-muted-foreground">Commissione</p>
+                <p className="font-medium text-primary">{formatPercent(proprieta.commissione_percentuale)}</p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Costo Pulizie</p>
+                <p className="font-medium">
+                  {proprieta.costo_pulizie ? formatCurrency(proprieta.costo_pulizie) : '-'}
+                </p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Tassa Soggiorno</p>
+                <p className="font-medium">
+                  {proprieta.tassa_soggiorno_persona
+                    ? `${formatCurrency(proprieta.tassa_soggiorno_persona)}/persona`
+                    : '-'}
+                </p>
               </div>
             </div>
           </CardContent>
@@ -135,80 +164,82 @@ export function PanoramicaSection({ proprieta, id, onUpdateProprieta }: Panorami
           </CardContent>
         </Card>
 
-        {/* Sopralluogo */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2">
-              <ClipboardCheck className="h-4 w-4" />
-              Sopralluogo
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {(() => {
-              const stato = proprieta.stato_sopralluogo || 'da_programmare'
-              const statoInfo = STATI_SOPRALLUOGO.find(s => s.id === stato)
-              return (
-                <>
-                  <div className="flex items-center gap-2">
-                    <Badge className={statoInfo?.color || ''}>{statoInfo?.label || stato}</Badge>
-                    {proprieta.data_sopralluogo && (
-                      <span className="text-sm text-muted-foreground">
-                        {new Date(proprieta.data_sopralluogo).toLocaleDateString('it-IT')}
-                      </span>
-                    )}
-                  </div>
+        {/* Sopralluogo - visibile solo se NON Live */}
+        {!isLive && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <ClipboardCheck className="h-4 w-4" />
+                Sopralluogo
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {(() => {
+                const stato = proprieta.stato_sopralluogo || 'da_programmare'
+                const statoInfo = STATI_SOPRALLUOGO.find(s => s.id === stato)
+                return (
+                  <>
+                    <div className="flex items-center gap-2">
+                      <Badge className={statoInfo?.color || ''}>{statoInfo?.label || stato}</Badge>
+                      {proprieta.data_sopralluogo && (
+                        <span className="text-sm text-muted-foreground">
+                          {new Date(proprieta.data_sopralluogo).toLocaleDateString('it-IT')}
+                        </span>
+                      )}
+                    </div>
 
-                  {stato === 'da_programmare' && (
-                    <div className="space-y-2">
-                      <label className="text-sm text-muted-foreground">Data sopralluogo</label>
-                      <input
-                        type="date"
-                        className="block text-sm border rounded px-2 py-1 w-full"
-                        value={proprieta.data_sopralluogo || ''}
-                        onChange={(e) => {
-                          onUpdateProprieta({
-                            id,
-                            data_sopralluogo: e.target.value || null,
-                            stato_sopralluogo: e.target.value ? 'programmato' : 'da_programmare',
-                          })
-                        }}
+                    {stato === 'da_programmare' && (
+                      <div className="space-y-2">
+                        <label className="text-sm text-muted-foreground">Data sopralluogo</label>
+                        <input
+                          type="date"
+                          className="block text-sm border rounded px-2 py-1 w-full"
+                          value={proprieta.data_sopralluogo || ''}
+                          onChange={(e) => {
+                            onUpdateProprieta({
+                              id,
+                              data_sopralluogo: e.target.value || null,
+                              stato_sopralluogo: e.target.value ? 'programmato' : 'da_programmare',
+                            })
+                          }}
+                        />
+                      </div>
+                    )}
+
+                    {stato === 'programmato' && (
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          onClick={() => onUpdateProprieta({ id, stato_sopralluogo: 'effettuato' })}
+                        >
+                          <Check className="h-3.5 w-3.5 mr-1" />
+                          Sopralluogo effettuato
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => onUpdateProprieta({ id, stato_sopralluogo: 'da_programmare', data_sopralluogo: null })}
+                        >
+                          Annulla
+                        </Button>
+                      </div>
+                    )}
+
+                    <div>
+                      <label className="text-sm text-muted-foreground">Note sopralluogo</label>
+                      <textarea
+                        className="block mt-1 text-sm border rounded px-2 py-1 w-full min-h-[60px] resize-y"
+                        value={proprieta.note_sopralluogo || ''}
+                        placeholder="Osservazioni dal sopralluogo..."
+                        onChange={(e) => onUpdateProprieta({ id, note_sopralluogo: e.target.value || null })}
                       />
                     </div>
-                  )}
-
-                  {stato === 'programmato' && (
-                    <div className="flex gap-2">
-                      <Button
-                        size="sm"
-                        onClick={() => onUpdateProprieta({ id, stato_sopralluogo: 'effettuato' })}
-                      >
-                        <Check className="h-3.5 w-3.5 mr-1" />
-                        Sopralluogo effettuato
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => onUpdateProprieta({ id, stato_sopralluogo: 'da_programmare', data_sopralluogo: null })}
-                      >
-                        Annulla
-                      </Button>
-                    </div>
-                  )}
-
-                  <div>
-                    <label className="text-sm text-muted-foreground">Note sopralluogo</label>
-                    <textarea
-                      className="block mt-1 text-sm border rounded px-2 py-1 w-full min-h-[60px] resize-y"
-                      value={proprieta.note_sopralluogo || ''}
-                      placeholder="Osservazioni dal sopralluogo..."
-                      onChange={(e) => onUpdateProprieta({ id, note_sopralluogo: e.target.value || null })}
-                    />
-                  </div>
-                </>
-              )
-            })()}
-          </CardContent>
-        </Card>
+                  </>
+                )
+              })()}
+            </CardContent>
+          </Card>
+        )}
 
         {/* Codici e Portali */}
         <Card>

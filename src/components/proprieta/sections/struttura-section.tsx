@@ -1,26 +1,31 @@
 'use client'
 
 import { useState } from 'react'
-import { Plus, Edit2, Trash2 } from 'lucide-react'
+import { Plus, Edit2, Trash2, Shield, Check, X, AlertTriangle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import { DataTable, Column, ConfirmDialog } from '@/components/shared'
 import { FotoProprietaGallery } from '@/components/shared/foto-proprieta-gallery'
 import { LocaleDialog, AssetDialog } from '@/components/proprieta/dialogs'
 import { formatCurrency } from '@/lib/utils'
 import { TIPI_LOCALE, CATEGORIE_ASSET, STATI_ASSET } from '@/constants'
 import { useDeleteLocale, useDeleteAsset } from '@/lib/hooks'
-import type { Locale, Asset } from '@/types/database'
+import type { Locale, Asset, Proprieta } from '@/types/database'
 
 interface StrutturaSectionProps {
   proprietaId: string
   locali: Locale[] | undefined
   asset: Asset[] | undefined
+  proprieta?: Proprieta
+  onUpdateProprieta?: (data: any) => void
   onRefresh?: () => void
 }
 
-export function StrutturaSection({ proprietaId, locali, asset, onRefresh }: StrutturaSectionProps) {
+export function StrutturaSection({ proprietaId, locali, asset, proprieta, onUpdateProprieta, onRefresh }: StrutturaSectionProps) {
   const [localeDialogOpen, setLocaleDialogOpen] = useState(false)
   const [selectedLocale, setSelectedLocale] = useState<Locale | null>(null)
   const [deleteLocaleId, setDeleteLocaleId] = useState<string | null>(null)
@@ -152,6 +157,202 @@ export function StrutturaSection({ proprietaId, locali, asset, onRefresh }: Stru
           />
         </CardContent>
       </Card>
+
+      {/* Sicurezza */}
+      {proprieta && onUpdateProprieta && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              <Shield className="h-4 w-4" />
+              Sicurezza e Conformità
+            </CardTitle>
+            <CardDescription>Dispositivi di sicurezza obbligatori per legge</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid md:grid-cols-2 gap-4">
+              {/* Estintore */}
+              <div className="flex items-start gap-3 p-3 rounded-lg border bg-card">
+                <Checkbox
+                  id="estintore"
+                  checked={proprieta.sicurezza_estintore}
+                  onCheckedChange={(checked) =>
+                    onUpdateProprieta({ id: proprietaId, sicurezza_estintore: !!checked })
+                  }
+                />
+                <div className="flex-1 space-y-1">
+                  <Label htmlFor="estintore" className="font-medium cursor-pointer">
+                    Estintore
+                  </Label>
+                  {proprieta.sicurezza_estintore && (
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground">Scadenza:</span>
+                      <Input
+                        type="date"
+                        className="h-7 text-xs w-36"
+                        value={proprieta.sicurezza_estintore_scadenza || ''}
+                        onChange={(e) =>
+                          onUpdateProprieta({
+                            id: proprietaId,
+                            sicurezza_estintore_scadenza: e.target.value || null,
+                          })
+                        }
+                      />
+                      {proprieta.sicurezza_estintore_scadenza &&
+                        new Date(proprieta.sicurezza_estintore_scadenza) < new Date() && (
+                          <Badge variant="destructive" className="text-xs gap-1">
+                            <AlertTriangle className="h-3 w-3" />
+                            Scaduto
+                          </Badge>
+                        )}
+                    </div>
+                  )}
+                </div>
+                {proprieta.sicurezza_estintore ? (
+                  <Check className="h-4 w-4 text-green-600" />
+                ) : (
+                  <X className="h-4 w-4 text-muted-foreground" />
+                )}
+              </div>
+
+              {/* Targhetta */}
+              <div className="flex items-center gap-3 p-3 rounded-lg border bg-card">
+                <Checkbox
+                  id="targhetta"
+                  checked={proprieta.sicurezza_targhetta}
+                  onCheckedChange={(checked) =>
+                    onUpdateProprieta({ id: proprietaId, sicurezza_targhetta: !!checked })
+                  }
+                />
+                <Label htmlFor="targhetta" className="flex-1 font-medium cursor-pointer">
+                  Targhetta Espositiva
+                </Label>
+                {proprieta.sicurezza_targhetta ? (
+                  <Check className="h-4 w-4 text-green-600" />
+                ) : (
+                  <X className="h-4 w-4 text-muted-foreground" />
+                )}
+              </div>
+
+              {/* Rilevatore Gas */}
+              <div className="flex items-start gap-3 p-3 rounded-lg border bg-card">
+                <Checkbox
+                  id="rilevatore_gas"
+                  checked={proprieta.sicurezza_rilevatore_gas}
+                  disabled={!proprieta.sicurezza_rilevatore_gas_necessario}
+                  onCheckedChange={(checked) =>
+                    onUpdateProprieta({ id: proprietaId, sicurezza_rilevatore_gas: !!checked })
+                  }
+                />
+                <div className="flex-1 space-y-1">
+                  <Label
+                    htmlFor="rilevatore_gas"
+                    className={`font-medium cursor-pointer ${!proprieta.sicurezza_rilevatore_gas_necessario ? 'text-muted-foreground' : ''}`}
+                  >
+                    Rilevatore Gas
+                  </Label>
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      id="gas_non_necessario"
+                      checked={!proprieta.sicurezza_rilevatore_gas_necessario}
+                      onCheckedChange={(checked) =>
+                        onUpdateProprieta({
+                          id: proprietaId,
+                          sicurezza_rilevatore_gas_necessario: !checked,
+                          sicurezza_rilevatore_gas: checked ? false : proprieta.sicurezza_rilevatore_gas,
+                        })
+                      }
+                    />
+                    <Label htmlFor="gas_non_necessario" className="text-xs text-muted-foreground cursor-pointer">
+                      Non necessario (no gas)
+                    </Label>
+                  </div>
+                </div>
+                {!proprieta.sicurezza_rilevatore_gas_necessario ? (
+                  <Badge variant="secondary" className="text-xs">N/A</Badge>
+                ) : proprieta.sicurezza_rilevatore_gas ? (
+                  <Check className="h-4 w-4 text-green-600" />
+                ) : (
+                  <X className="h-4 w-4 text-muted-foreground" />
+                )}
+              </div>
+
+              {/* Rilevatore Monossido */}
+              <div className="flex items-center gap-3 p-3 rounded-lg border bg-card">
+                <Checkbox
+                  id="rilevatore_monossido"
+                  checked={proprieta.sicurezza_rilevatore_monossido}
+                  onCheckedChange={(checked) =>
+                    onUpdateProprieta({ id: proprietaId, sicurezza_rilevatore_monossido: !!checked })
+                  }
+                />
+                <Label htmlFor="rilevatore_monossido" className="flex-1 font-medium cursor-pointer">
+                  Rilevatore Monossido CO
+                </Label>
+                {proprieta.sicurezza_rilevatore_monossido ? (
+                  <Check className="h-4 w-4 text-green-600" />
+                ) : (
+                  <X className="h-4 w-4 text-muted-foreground" />
+                )}
+              </div>
+
+              {/* Cassetta Pronto Soccorso */}
+              <div className="flex items-center gap-3 p-3 rounded-lg border bg-card">
+                <Checkbox
+                  id="cassetta_ps"
+                  checked={proprieta.sicurezza_cassetta_ps}
+                  onCheckedChange={(checked) =>
+                    onUpdateProprieta({ id: proprietaId, sicurezza_cassetta_ps: !!checked })
+                  }
+                />
+                <Label htmlFor="cassetta_ps" className="flex-1 font-medium cursor-pointer">
+                  Cassetta Pronto Soccorso
+                </Label>
+                {proprieta.sicurezza_cassetta_ps ? (
+                  <Check className="h-4 w-4 text-green-600" />
+                ) : (
+                  <X className="h-4 w-4 text-muted-foreground" />
+                )}
+              </div>
+            </div>
+
+            {/* Riepilogo conformità */}
+            {(() => {
+              const items = [
+                { ok: proprieta.sicurezza_estintore, label: 'Estintore' },
+                { ok: proprieta.sicurezza_targhetta, label: 'Targhetta' },
+                { ok: !proprieta.sicurezza_rilevatore_gas_necessario || proprieta.sicurezza_rilevatore_gas, label: 'Rilevatore Gas' },
+                { ok: proprieta.sicurezza_rilevatore_monossido, label: 'Rilevatore CO' },
+                { ok: proprieta.sicurezza_cassetta_ps, label: 'Cassetta PS' },
+              ]
+              const completati = items.filter(i => i.ok).length
+              const totale = items.length
+              const percentuale = Math.round((completati / totale) * 100)
+
+              return (
+                <div className="flex items-center justify-between pt-2 border-t">
+                  <div className="flex items-center gap-2">
+                    <div className="h-2 w-24 bg-muted rounded-full overflow-hidden">
+                      <div
+                        className={`h-full transition-all ${percentuale === 100 ? 'bg-green-500' : percentuale >= 60 ? 'bg-yellow-500' : 'bg-red-500'}`}
+                        style={{ width: `${percentuale}%` }}
+                      />
+                    </div>
+                    <span className="text-sm text-muted-foreground">
+                      {completati}/{totale} conformi
+                    </span>
+                  </div>
+                  {percentuale === 100 && (
+                    <Badge className="bg-green-100 text-green-700 border-green-300 gap-1">
+                      <Check className="h-3 w-3" />
+                      Conforme
+                    </Badge>
+                  )}
+                </div>
+              )
+            })()}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Foto */}
       <FotoProprietaGallery proprietaId={proprietaId} />

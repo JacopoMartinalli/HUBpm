@@ -2,20 +2,23 @@
 
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, Building2, MapPin, Edit, Trash2, Home, FileText, Key, Handshake, Phone, Mail, FolderOpen } from 'lucide-react'
+import { ArrowLeft, Building2, MapPin, Edit, Trash2, Home, FileText, Key, Handshake, Phone, Mail, FolderOpen, BarChart3, Sparkles } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { AlertTriangle } from 'lucide-react'
-import { LoadingSpinner, FaseBadge, ConfirmDialog } from '@/components/shared'
-import { PipelineProprietaCard } from '@/components/proprieta'
-import { PanoramicaSection } from '@/components/proprieta/sections/panoramica-section'
-import { CommercialeSection } from '@/components/proprieta/sections/commerciale-section'
-import { StrutturaSection } from '@/components/proprieta/sections/struttura-section'
-import { OperativoSection } from '@/components/proprieta/sections/operativo-section'
-import { TeamSection } from '@/components/proprieta/sections/team-section'
-import { DocumentiSection } from '@/components/proprieta/sections/documenti-section'
-import { useProprieta, useUpdateProprieta, useDeleteProprieta, useLocaliByProprieta, useAssetByProprieta, useCambioFase, useErogazionePacchettiByProprieta, usePartnerProprietaByProprieta, useDeletePartnerProprieta, usePartnerList, useCreatePartnerProprieta } from '@/lib/hooks'
+import { LoadingSpinner, ConfirmDialog } from '@/components/shared'
+import {
+  PipelineStepperInline,
+  PanoramicaSection,
+  CommercialeSection,
+  StrutturaSection,
+  OperativoSection,
+  TeamSection,
+  DocumentiSection,
+  LiveDashboardSection,
+} from '@/components/proprieta'
+import { useProprieta, useUpdateProprieta, useDeleteProprieta, useLocaliByProprieta, useAssetByProprieta, useCambioFase, useErogazionePacchettiByProprieta, usePartnerProprietaByProprieta, usePartnerList, useCreatePartnerProprieta, useDeletePartnerProprieta } from '@/lib/hooks'
 import { TIPOLOGIE_PROPRIETA } from '@/constants'
 import { useState } from 'react'
 import { cn } from '@/lib/utils'
@@ -27,7 +30,8 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 
-const SECTIONS = [
+// Sezioni per proprietà in lavorazione (P0-P3)
+const SECTIONS_LAVORAZIONE = [
   { id: 'panoramica', label: 'Panoramica', icon: Building2 },
   { id: 'commerciale', label: 'Commerciale', icon: FileText },
   { id: 'documenti', label: 'Documenti', icon: FolderOpen },
@@ -36,7 +40,19 @@ const SECTIONS = [
   { id: 'team', label: 'Team', icon: Handshake },
 ] as const
 
-type SectionId = typeof SECTIONS[number]['id']
+// Sezioni per proprietà Live (P4)
+const SECTIONS_LIVE = [
+  { id: 'dashboard', label: 'Dashboard', icon: BarChart3 },
+  { id: 'panoramica', label: 'Panoramica', icon: Building2 },
+  { id: 'documenti', label: 'Documenti', icon: FolderOpen },
+  { id: 'struttura', label: 'Struttura', icon: Home },
+  { id: 'operativo', label: 'Operativo', icon: Key },
+  { id: 'team', label: 'Team', icon: Handshake },
+] as const
+
+type SectionIdLavorazione = typeof SECTIONS_LAVORAZIONE[number]['id']
+type SectionIdLive = typeof SECTIONS_LIVE[number]['id']
+type SectionId = SectionIdLavorazione | SectionIdLive
 
 export default function ProprietaDetailPage() {
   const params = useParams()
@@ -76,6 +92,18 @@ export default function ProprietaDetailPage() {
 
   const tipologiaLabel = TIPOLOGIE_PROPRIETA.find(t => t.id === proprieta.tipologia)?.label || proprieta.tipologia
 
+  // Determina se la proprietà è Live (P4 o P5)
+  const isLive = proprieta.fase === 'P4' || proprieta.fase === 'P5'
+  const SECTIONS = isLive ? SECTIONS_LIVE : SECTIONS_LAVORAZIONE
+
+  // Se cambia da lavorazione a live, resetta la sezione se necessario
+  if (isLive && activeSection === 'commerciale') {
+    setActiveSection('dashboard')
+  }
+  if (!isLive && activeSection === 'dashboard') {
+    setActiveSection('panoramica')
+  }
+
   const handleDelete = () => {
     deleteProprieta(id, {
       onSuccess: () => router.push('/proprieta'),
@@ -101,21 +129,42 @@ export default function ProprietaDetailPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
+      {/* Header con Pipeline inline */}
       <div className="flex items-start gap-4">
         <Button variant="ghost" size="icon" onClick={() => router.back()} className="mt-1">
           <ArrowLeft className="h-4 w-4" />
         </Button>
+
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-3 flex-wrap">
-            <h1 className="text-2xl font-bold">{proprieta.nome}</h1>
-            <Badge variant="outline">{tipologiaLabel}</Badge>
-            <FaseBadge fase={proprieta.fase} tipo="proprieta" />
+          {/* Riga principale: Nome + Pipeline */}
+          <div className="flex items-center gap-4 flex-wrap">
+            <div className="flex items-center gap-3">
+              <h1 className="text-2xl font-bold">{proprieta.nome}</h1>
+              <Badge variant="outline">{tipologiaLabel}</Badge>
+              {isLive && (
+                <Badge className="bg-green-100 text-green-700 border-green-300 gap-1">
+                  <Sparkles className="h-3 w-3" />
+                  Live
+                </Badge>
+              )}
+            </div>
+
+            {/* Pipeline Stepper Inline */}
+            <div className="ml-auto">
+              <PipelineStepperInline
+                faseCorrente={proprieta.fase}
+                onCambioFase={handleFaseChange}
+                isCambioFaseLoading={cambioFase.isPending}
+              />
+            </div>
           </div>
+
+          {/* Indirizzo */}
           <p className="text-muted-foreground flex items-center gap-1 mt-1">
             <MapPin className="h-4 w-4" />
             {proprieta.indirizzo}, {proprieta.citta}
           </p>
+
           {/* Proprietario */}
           {proprieta.contatto && (
             <div className="flex items-center gap-4 mt-2 text-sm">
@@ -140,6 +189,7 @@ export default function ProprietaDetailPage() {
             </div>
           )}
         </div>
+
         <div className="flex gap-2 flex-shrink-0">
           <Button variant="outline" size="icon">
             <Edit className="h-4 w-4" />
@@ -150,16 +200,7 @@ export default function ProprietaDetailPage() {
         </div>
       </div>
 
-      {/* Pipeline Progress */}
-      <PipelineProprietaCard
-        faseCorrente={proprieta.fase}
-        proprietaId={id}
-        onCambioFase={(nuovaFase) => handleFaseChange(nuovaFase)}
-        isCambioFaseLoading={cambioFase.isPending}
-        pacchettiAttivi={erogazioni?.map(e => e.pacchetto?.nome || '') || []}
-        onNavigateToServizi={() => setActiveSection('commerciale')}
-      />
-
+      {/* Errore cambio fase */}
       {faseError && (
         <Alert variant="destructive">
           <AlertTriangle className="h-4 w-4" />
@@ -207,6 +248,17 @@ export default function ProprietaDetailPage() {
 
         {/* Content */}
         <div className="flex-1 min-w-0">
+          {/* Dashboard Live (solo per P4) */}
+          {activeSection === 'dashboard' && isLive && (
+            <LiveDashboardSection
+              proprieta={proprieta}
+              prenotazioniMese={0}
+              ricavoMese={0}
+              occupazioneMese={0}
+              recensioniMedia={0}
+            />
+          )}
+
           {activeSection === 'panoramica' && (
             <PanoramicaSection
               proprieta={proprieta}
@@ -214,7 +266,8 @@ export default function ProprietaDetailPage() {
               onUpdateProprieta={updateProprieta}
             />
           )}
-          {activeSection === 'commerciale' && (
+
+          {activeSection === 'commerciale' && !isLive && (
             <CommercialeSection
               proprietaId={id}
               contattoId={proprieta.contatto_id}
@@ -223,19 +276,24 @@ export default function ProprietaDetailPage() {
               onPropostaAccettata={() => setFaseError(null)}
             />
           )}
+
           {activeSection === 'documenti' && (
             <DocumentiSection
               proprietaId={id}
               faseProprieta={proprieta.fase}
             />
           )}
+
           {activeSection === 'struttura' && (
             <StrutturaSection
               proprietaId={id}
               locali={locali}
               asset={asset}
+              proprieta={proprieta}
+              onUpdateProprieta={updateProprieta}
             />
           )}
+
           {activeSection === 'operativo' && (
             <OperativoSection
               proprieta={proprieta}
@@ -243,6 +301,7 @@ export default function ProprietaDetailPage() {
               onUpdateProprieta={updateProprieta}
             />
           )}
+
           {activeSection === 'team' && (
             <TeamSection
               proprietaId={id}
